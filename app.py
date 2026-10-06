@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, jsonify, Response, stream_with_context
+from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 from google import genai
 
@@ -31,23 +31,14 @@ def chat():
     if not message:
         return jsonify({"error": "Message cannot be empty."}), 400
 
-    def generate():
-        try:
-            stream = client.models.generate_content_stream(
-                model=os.getenv("KYRO_MODEL", "gemini-3.5-flash-lite"),
-                contents=f"{SYSTEM_PROMPT}\n\nUser: {message}",
-            )
-            for chunk in stream:
-                if chunk.text:
-                    yield chunk.text
-        except Exception as exc:
-            yield f"\n[ERROR] {exc}"
-
-    return Response(
-        stream_with_context(generate()),
-        mimetype="text/plain",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
+    try:
+        response = client.models.generate_content(
+            model=os.getenv("KYRO_MODEL", "gemini-3.5-flash-lite"),
+            contents=f"{SYSTEM_PROMPT}\n\nUser: {message}",
+        )
+        return jsonify({"reply": response.text})
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, host="127.0.0.1", port=5000)
