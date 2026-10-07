@@ -137,15 +137,27 @@ def chat():
         )
 
     try:
-        # Keep the default path intentionally simple and close to the original
-        # working KYRO implementation. Advanced features only opt into the
-        # structured/tool path when the user explicitly enables them.
-        advanced = bool(history or memory or use_web or use_code or file_part)
+        # Normal KYRO chats intentionally stay on the original simple request path.
+        # History and memory are added as plain text so the default path remains stable.
+        advanced = bool(use_web or use_code or file_part)
 
         if not advanced:
+            conversation = []
+            for item in history:
+                speaker = "User" if item["role"] == "user" else "KYRO"
+                conversation.append(f"{speaker}: {item['text']}")
+
+            memory_block = ""
+            if memory:
+                memory_block = "Saved user memory:\n" + memory[:6000] + "\n\n"
+
+            history_block = ""
+            if conversation:
+                history_block = "Conversation so far:\n" + "\n".join(conversation) + "\n\n"
+
             response = client.models.generate_content(
                 model=os.getenv("KYRO_MODEL", "gemini-3.5-flash-lite"),
-                contents=f"{SYSTEM_PROMPT}\n\nUser: {message}",
+                contents=f"{SYSTEM_PROMPT}\n\n{memory_block}{history_block}User: {message}",
             )
         else:
             contents = []
