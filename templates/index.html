@@ -350,8 +350,13 @@
 
       try{
         const res=await fetch("/api/chat",{method:"POST",body:payload});
-        const data=await res.json();removeTyping();
+        const raw=await res.text();
+        let data;
+        try{data=JSON.parse(raw)}catch{data={error:raw||"Server returned an invalid response."}}
+        removeTyping();
+
         if(!res.ok)throw new Error(data.error||"Something went wrong.");
+        if(!data.reply)throw new Error("KYRO returned an empty response.");
 
         addVisible(data.reply,"kyro",data.sources||[]);
         addStored(data.reply,"kyro",data.sources||[]);
@@ -366,7 +371,26 @@
     function addVisible(text,type,sources=[]){createMessage(text,type,true,sources)}
     refreshMemory();
 
-    if(!activeId||!chats.some(c=>c.id===activeId)){if(chats.length)activeId=chats[0].id;else createChat()}
+    // Remove duplicate empty chats left behind by interrupted earlier versions.
+    const seenEmpty=new Set();
+    chats=chats.filter(c=>{
+      const empty=!c.messages?.length && (c.title==="New chat" || !c.title);
+      if(!empty)return true;
+      if(seenEmpty.size===1)return false;
+      seenEmpty.add(c.id);
+      return true;
+    });
+
+    if(!activeId||!chats.some(c=>c.id===activeId)){
+      if(chats.length){
+        activeId=chats[0].id;
+      }else{
+        const first={id:uid(),title:"New chat",messages:[],updatedAt:Date.now()};
+        chats=[first];
+        activeId=first.id;
+      }
+    }
+
     persist();renderHistory();renderMessages();
   </script>
 </body>
