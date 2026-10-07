@@ -61,6 +61,7 @@
     .msg-tools{display:flex;gap:5px;margin:5px 3px 0}
     .tool-btn{border:0;background:transparent;color:#66666e;font-size:11px;padding:3px 5px;border-radius:6px}
     .tool-btn:hover{color:#d5d5da;background:rgba(255,255,255,.05)}
+    .tool-btn:disabled{opacity:.45;cursor:wait}
     .typing{display:inline-flex;align-items:center;gap:6px;padding:14px 16px}
     .typing span{width:6px;height:6px;border-radius:50%;background:#aaaab1;animation:bounce 1.15s infinite ease-in-out}
     .typing span:nth-child(2){animation-delay:.12s}.typing span:nth-child(3){animation-delay:.24s}
@@ -216,7 +217,7 @@
       });
     }
 
-    function createMessage(text, type, animate){
+    function createMessage(text, type, animate, messageIndex = -1){
       const wrap = document.createElement("div");
       wrap.className = "msg-wrap " + type;
       if(!animate) wrap.style.animation = "none";
@@ -243,6 +244,17 @@
         };
 
         tools.appendChild(copy);
+
+        const c = currentChat();
+        if(c && messageIndex > 0 && c.messages[messageIndex - 1]?.type === "user"){
+          const regenerate = document.createElement("button");
+          regenerate.className = "tool-btn";
+          regenerate.type = "button";
+          regenerate.textContent = "Regenerate";
+          regenerate.onclick = () => regenerateResponse(messageIndex - 1, regenerate);
+          tools.appendChild(regenerate);
+        }
+
         div.appendChild(tools);
       }
 
@@ -277,7 +289,7 @@
         return;
       }
 
-      c.messages.forEach(m => createMessage(m.text, m.type, false));
+      c.messages.forEach((m, i) => createMessage(m.text, m.type, false, i));
       chat.scrollTop = chat.scrollHeight;
     }
 
@@ -314,7 +326,67 @@
     }
 
     function addVisibleMessage(text, type){
-      createMessage(text, type, true);
+      createMessage(text, type, true, currentChat()?.messages.length ?? -1);
+    }
+
+    async function regenerateResponse(userIndex, button){
+      const targetChat = currentChat();
+      if(!targetChat || send.disabled) return;
+
+      const original = targetChat.messages[userIndex];
+      if(!original || original.type !== "user") return;
+
+      const targetId = targetChat.id;
+      const message = original.text;
+
+      send.disabled = true;
+      send.textContent = "…";
+      if(button) button.disabled = true;
+      addTyping();
+
+      try{
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({message})
+        });
+
+        const data = await res.json();
+        removeTyping();
+
+        if(!res.ok) throw new Error(data.error || "Something went wrong.");
+
+        const target = chats.find(c => c.id === targetId);
+        if(!target) return;
+
+        const existing = target.messages[userIndex + 1];
+        const updated = {text:data.reply, type:"kyro"};
+
+        if(existing && existing.type === "kyro"){
+          target.messages[userIndex + 1] = updated;
+        }else{
+          target.messages.splice(userIndex + 1, 0, updated);
+        }
+
+        target.updatedAt = Date.now();
+        persist();
+
+        if(activeId === targetId){
+          renderHistory();
+          renderMessages();
+        }
+      }catch(error){
+        removeTyping();
+        const errorMessage = "Error: " + error.message;
+        const target = chats.find(c => c.id === targetId);
+        if(target && activeId === targetId){
+          addVisibleMessage(errorMessage, "kyro");
+        }
+      }finally{
+        send.disabled = false;
+        send.textContent = "Send";
+        input.focus();
+      }
     }
 
     newChatBtn.addEventListener("click", createChat);
