@@ -154,7 +154,7 @@ def chat():
     if use_web:
         tools.append(types.Tool(google_search=types.GoogleSearch()))
     if use_code:
-        tools.append(types.Tool(code_execution=types.ToolCodeExecution()))
+        tools.append(types.Tool(code_execution=types.ToolCodeExecution))
 
     config_kwargs = {
         "system_instruction": SYSTEM_PROMPT,
