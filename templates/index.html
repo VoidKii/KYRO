@@ -329,6 +329,15 @@
       createMessage(text, type, true, currentChat()?.messages.length ?? -1);
     }
 
+    function apiHistory(limit = 12){
+      const c = currentChat();
+      if(!c) return [];
+      return c.messages.slice(-limit).map(m => ({
+        role: m.type === "user" ? "user" : "kyro",
+        text: m.text
+      }));
+    }
+
     async function regenerateResponse(userIndex, button){
       const targetChat = currentChat();
       if(!targetChat || send.disabled) return;
@@ -348,7 +357,10 @@
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({message})
+          body: JSON.stringify({
+            message,
+            history: JSON.stringify(apiHistory())
+          })
         });
 
         const data = await res.json();
@@ -433,7 +445,10 @@
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({message})
+          body: JSON.stringify({
+            message,
+            history: JSON.stringify(apiHistory(12))
+          })
         });
 
         const data = await res.json();
