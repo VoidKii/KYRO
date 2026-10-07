@@ -25,7 +25,6 @@ When a file is attached, inspect it carefully and answer based on its contents.
 
 MAX_HISTORY = 16
 MAX_FILE_BYTES = 8 * 1024 * 1024
-
 ALLOWED_FILE_PREFIXES = ("image/", "text/")
 ALLOWED_FILE_TYPES = {
     "application/pdf",
@@ -35,6 +34,7 @@ ALLOWED_FILE_TYPES = {
     "text/javascript",
     "application/xml",
 }
+
 
 def clean_history(raw_history):
     try:
@@ -53,15 +53,8 @@ def clean_history(raw_history):
         role = item.get("role")
         text = str(item.get("text", "")).strip()
 
-        if role not in ("user", "model") or not text:
-            continue
-
-        cleaned.append(
-            types.Content(
-                role=role,
-                parts=[types.Part.from_text(text=text)],
-            )
-        )
+        if role in ("user", "model") and text:
+            cleaned.append({"role": role, "text": text})
 
     return cleaned
 
@@ -91,6 +84,13 @@ def extract_sources(response):
     return sources[:8]
 
 
+def request_value(name, default=""):
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        return data.get(name, default)
+    return request.form.get(name, default)
+
+
 @app.get("/")
 def home():
     return render_template("index.html")
@@ -101,16 +101,18 @@ def chat():
     if client is None:
         return jsonify({"error": "GEMINI_API_KEY is not configured yet."}), 500
 
-    message = str(request.form.get("message", "")).strip()
+    message = str(request_value("message", "")).strip()
     if not message:
         return jsonify({"error": "Message cannot be empty."}), 400
 
-    history = clean_history(request.form.get("history"))
-    memory = str(request.form.get("memory", "")).strip()
-    use_web = request.form.get("web", "false").lower() == "true"
-    use_code = request.form.get("code", "false").lower() == "true"
+    history = clean_history(request_value("history", "[]"))
+    memory = str(request_value("memory", "")).strip()
+    use_web = str(request_value("web", "false")).lower() == "true"
+    use_code = str(request_value("code", "false")).lower() == "true"
 
     uploaded = request.files.get("file")
+    file_part = None
+
     if uploaded and uploaded.filename:
         uploaded.stream.seek(0, os.SEEK_END)
         file_size = uploaded.stream.tell()
@@ -129,53 +131,81 @@ def chat():
                 "error": "That file type is not supported yet. Use an image, PDF, text, JSON, CSV, or code file."
             }), 400
 
-        file_bytes = uploaded.read()
-        file_part = types.Part.from_bytes(data=file_bytes, mime_type=mime_type)
-    else:
-        file_part = None
-
-    contents = list(history)
-
-    context_parts = []
-    if memory:
-        context_parts.append(
-            types.Part.from_text(
-                text="Saved user memory:\n" + memory[:6000]
-            )
+        file_part = types.Part.from_bytes(
+            data=uploaded.read(),
+            mime_type=mime_type,
         )
-
-    context_parts.append(types.Part.from_text(text=message))
-    if file_part is not None:
-        context_parts.append(file_part)
-
-    contents.append(types.Content(role="user", parts=context_parts))
-
-    tools = []
-    if use_web:
-        tools.append(types.Tool(google_search=types.GoogleSearch()))
-    if use_code:
-        tools.append(types.Tool(code_execution=types.ToolCodeExecution))
-
-    config_kwargs = {
-        "system_instruction": SYSTEM_PROMPT,
-        "max_output_tokens": 2048,
-    }
-
-    if tools:
-        config_kwargs["tools"] = tools
 
     try:
-        response = client.models.generate_content(
-            model=os.getenv("KYRO_MODEL", "gemini-3.5-flash-lite"),
-            contents=contents,
-            config=types.GenerateContentConfig(**config_kwargs),
-        )
+        # Keep the default path intentionally simple and close to the original
+        # working KYRO implementation. Advanced features only opt into the
+        # structured/tool path when the user explicitly enables them.
+        advanced = bool(history or memory or use_web or use_code or file_part)
 
-        reply = response.text or "I couldn't generate a response."
+        if not advanced:
+            response = client.models.generate_content(
+                model=os.getenv("KYRO_MODEL", "gemini-3.5-flash-lite"),
+                contents=f"{SYSTEM_PROMPT}\n\nUser: {message}",
+            )
+        else:
+            contents = []
+
+            for item in history:
+                contents.append(
+                    types.Content(
+                        role=item["role"],
+                        parts=[types.Part.from_text(text=item["text"])],
+                    )
+                )
+
+            context_parts = []
+            if memory:
+                context_parts.append(
+                    types.Part.from_text(
+                        text="Saved user memory:\n" + memory[:6000]
+                    )
+                )
+
+            context_parts.append(types.Part.from_text(text=message))
+
+            if file_part is not None:
+                context_parts.append(file_part)
+
+            contents.append(types.Content(role="user", parts=context_parts))
+
+            tools = []
+            if use_web:
+                tools.append(
+                    types.Tool(
+                        google_search=types.GoogleSearch()
+                    )
+                )
+            if use_code:
+                tools.append(
+                    types.Tool(
+                        code_execution=types.ToolCodeExecution()
+                    )
+                )
+
+            config = types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+                max_output_tokens=2048,
+                tools=tools or None,
+            )
+
+            response = client.models.generate_content(
+                model=os.getenv("KYRO_MODEL", "gemini-3.5-flash-lite"),
+                contents=contents,
+                config=config,
+            )
+
+        reply = getattr(response, "text", None) or "I couldn't generate a response."
+
         return jsonify({
             "reply": reply,
             "sources": extract_sources(response),
         })
+
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
 
