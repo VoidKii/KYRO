@@ -3,118 +3,348 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>KYRO</title>
+  <meta name="theme-color" content="#09090b">
+  <title>KYRO — Personal AI</title>
   <style>
+    :root {
+      --bg: #070708;
+      --panel: rgba(15, 15, 18, .86);
+      --border: rgba(255, 255, 255, .08);
+      --text: #f7f7f8;
+      --muted: #909098;
+      --user: #f4f4f5;
+      --user-text: #09090b;
+      --kyro: #141418;
+      --input: #0e0e11;
+    }
+
     * { box-sizing: border-box; }
+
+    html, body { height: 100%; }
+
     body {
       margin: 0;
-      min-height: 100vh;
-      font-family: Inter, Arial, sans-serif;
-      background: #090909;
-      color: #f5f5f5;
-      display: grid;
-      place-items: center;
+      min-height: 100%;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 50% -10%, rgba(255,255,255,.08), transparent 38%),
+        radial-gradient(circle at 0% 100%, rgba(255,255,255,.035), transparent 30%),
+        var(--bg);
+      overflow: hidden;
     }
+
+    button, input { font: inherit; }
+
     .app {
-      width: min(900px, 94vw);
-      height: min(760px, 90vh);
-      border: 1px solid #252525;
-      border-radius: 24px;
-      background: #101010;
+      width: min(1120px, 96vw);
+      height: min(900px, 94vh);
+      margin: 3vh auto;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      box-shadow: 0 20px 80px rgba(0,0,0,.45);
+      border: 1px solid var(--border);
+      border-radius: 26px;
+      background: var(--panel);
+      backdrop-filter: blur(22px);
+      box-shadow: 0 30px 100px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.03);
     }
+
     header {
-      padding: 22px 26px;
-      border-bottom: 1px solid #242424;
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,10,12,.62);
     }
+
+    .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+
     .logo {
-      width: 42px;
-      height: 42px;
-      border-radius: 13px;
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
       display: grid;
       place-items: center;
-      background: #fff;
+      border-radius: 14px;
       color: #000;
-      font-weight: 900;
-      font-size: 18px;
+      background: #fff;
+      font-weight: 950;
+      letter-spacing: -1px;
+      box-shadow: 0 0 28px rgba(255,255,255,.12);
     }
-    header h1 { margin: 0; font-size: 20px; }
-    header p { margin: 3px 0 0; color: #888; font-size: 13px; }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.05;
+      letter-spacing: -.4px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #79d98c;
+      box-shadow: 0 0 10px rgba(121,217,140,.7);
+    }
+
+    .header-actions { display: flex; gap: 8px; }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: #d7d7db;
+      background: rgba(255,255,255,.025);
+      cursor: pointer;
+      transition: .18s ease;
+    }
+
+    .icon-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.06);
+      border-color: rgba(255,255,255,.14);
+    }
+
     #chat {
       flex: 1;
       overflow-y: auto;
-      padding: 28px;
+      padding: 30px clamp(16px, 5vw, 70px);
+      scroll-behavior: smooth;
     }
-    .msg {
-      max-width: 78%;
-      padding: 13px 16px;
-      border-radius: 17px;
-      margin-bottom: 14px;
-      line-height: 1.5;
-      white-space: pre-wrap;
+
+    #chat::-webkit-scrollbar { width: 9px; }
+
+    #chat::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,.1);
+      border-radius: 10px;
     }
-    .user {
-      margin-left: auto;
-      background: #fff;
-      color: #111;
-      border-bottom-right-radius: 5px;
+
+    .welcome {
+      max-width: 700px;
+      margin: 8vh auto 34px;
+      text-align: center;
     }
-    .kyro {
-      background: #191919;
-      border: 1px solid #292929;
-      border-bottom-left-radius: 5px;
+
+    .welcome-badge {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 18px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: linear-gradient(145deg, #1c1c21, #0d0d10);
+      font-weight: 950;
+      font-size: 24px;
+      box-shadow: 0 15px 50px rgba(0,0,0,.28);
     }
-    form {
-      padding: 18px;
-      border-top: 1px solid #242424;
+
+    .welcome h2 {
+      margin: 0;
+      font-size: clamp(28px, 5vw, 42px);
+      letter-spacing: -1.4px;
+    }
+
+    .welcome p {
+      margin: 10px auto 0;
+      max-width: 560px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .msg-wrap {
       display: flex;
-      gap: 10px;
+      margin: 0 auto 16px;
+      max-width: 850px;
+      animation: messageIn .24s ease both;
     }
-    input {
-      flex: 1;
-      background: #181818;
-      color: white;
-      border: 1px solid #2c2c2c;
-      border-radius: 14px;
+
+    .msg-wrap.user { justify-content: flex-end; }
+    .msg-wrap.kyro { justify-content: flex-start; }
+
+    .msg {
+      max-width: min(78%, 720px);
+      padding: 13px 16px;
+      border-radius: 19px;
+      line-height: 1.62;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 14px;
+    }
+
+    .msg.user {
+      color: var(--user-text);
+      background: var(--user);
+      border-bottom-right-radius: 6px;
+      box-shadow: 0 8px 22px rgba(0,0,0,.18);
+    }
+
+    .msg.kyro {
+      color: #e7e7ea;
+      background: var(--kyro);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 6px;
+    }
+
+    .typing {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       padding: 14px 16px;
-      outline: none;
     }
-    input:focus { border-color: #555; }
-    button {
+
+    .typing span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #aaaab1;
+      animation: bounce 1.15s infinite ease-in-out;
+    }
+
+    .typing span:nth-child(2) { animation-delay: .12s; }
+    .typing span:nth-child(3) { animation-delay: .24s; }
+
+    form {
+      padding: 14px 16px 17px;
+      border-top: 1px solid var(--border);
+      background: rgba(10,10,12,.7);
+    }
+
+    .composer {
+      width: min(850px, 100%);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--input);
+      box-shadow: 0 10px 35px rgba(0,0,0,.2);
+    }
+
+    input {
+      min-width: 0;
+      flex: 1;
       border: 0;
-      border-radius: 14px;
-      padding: 0 20px;
+      outline: none;
+      padding: 11px 12px;
+      color: #fff;
+      background: transparent;
+    }
+
+    input::placeholder { color: #66666e; }
+
+    .send {
+      height: 40px;
+      padding: 0 17px;
+      border: 0;
+      border-radius: 13px;
       background: #fff;
       color: #000;
-      font-weight: 800;
+      font-weight: 850;
       cursor: pointer;
+      transition: .18s ease;
     }
-    button:disabled { opacity: .5; cursor: wait; }
+
+    .send:hover:not(:disabled) { transform: translateY(-1px); }
+    .send:disabled { opacity: .45; cursor: wait; }
+
+    .hint {
+      width: min(850px, 100%);
+      margin: 8px auto 0;
+      text-align: center;
+      color: #5f5f67;
+      font-size: 11px;
+    }
+
+    @keyframes messageIn {
+      from { opacity: 0; transform: translateY(7px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: .45; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    @media (max-width: 700px) {
+      body { overflow: auto; }
+
+      .app {
+        width: 100vw;
+        height: 100vh;
+        min-height: 100svh;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+      }
+
+      header { padding: 14px; }
+      .logo { width: 40px; height: 40px; flex-basis: 40px; }
+      .header-actions .icon-btn { width: 38px; height: 38px; }
+
+      #chat { padding: 20px 12px 22px; }
+
+      .welcome {
+        margin: 6vh auto 28px;
+        padding: 0 10px;
+      }
+
+      .welcome h2 { font-size: 30px; }
+      .welcome p { font-size: 13px; }
+
+      .msg { max-width: 88%; font-size: 13px; }
+
+      form { padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); }
+
+      .composer { border-radius: 16px; }
+      input { padding: 10px 8px; }
+      .send { padding: 0 14px; }
+    }
   </style>
 </head>
 <body>
   <main class="app">
     <header>
-      <div class="logo">K</div>
-      <div>
-        <h1>KYRO</h1>
-        <p>Your personal AI assistant</p>
+      <div class="brand">
+        <div class="logo">K</div>
+        <div>
+          <h1>KYRO</h1>
+          <div class="status"><span class="dot"></span> Online · Personal AI</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="icon-btn" id="clear" type="button" title="Clear chat" aria-label="Clear chat">⌫</button>
       </div>
     </header>
 
-    <section id="chat">
-      <div class="msg kyro">Yo 👋 I'm KYRO. Let's build something.</div>
-    </section>
+    <section id="chat"></section>
 
     <form id="form">
-      <input id="message" autocomplete="off" placeholder="Talk to KYRO..." />
-      <button id="send" type="submit">Send</button>
+      <div class="composer">
+        <input id="message" autocomplete="off" placeholder="Message KYRO..." maxlength="4000">
+        <button class="send" id="send" type="submit">Send</button>
+      </div>
+      <div class="hint">KYRO can make mistakes. Check important information.</div>
     </form>
   </main>
 
@@ -123,38 +353,144 @@
     const input = document.getElementById("message");
     const chat = document.getElementById("chat");
     const send = document.getElementById("send");
+    const clear = document.getElementById("clear");
+    const HISTORY_KEY = "kyro_chat_history_v1";
 
-    function addMessage(text, type) {
+    function saveHistory(history) {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-100)));
+    }
+
+    function loadHistory() {
+      try {
+        return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function createMessage(text, type, animate = true) {
+      const wrap = document.createElement("div");
+      wrap.className = "msg-wrap " + type;
+      if (!animate) wrap.style.animation = "none";
+
       const div = document.createElement("div");
       div.className = "msg " + type;
       div.textContent = text;
-      chat.appendChild(div);
+
+      wrap.appendChild(div);
+      chat.appendChild(wrap);
+      chat.scrollTop = chat.scrollHeight;
+      return wrap;
+    }
+
+    function showWelcome() {
+      const welcome = document.createElement("div");
+      welcome.className = "welcome";
+
+      const badge = document.createElement("div");
+      badge.className = "welcome-badge";
+      badge.textContent = "K";
+
+      const title = document.createElement("h2");
+      title.textContent = "What are we building today?";
+
+      const p = document.createElement("p");
+      p.textContent = "Talk to KYRO, your personal AI assistant for ideas, coding, projects, learning, and whatever comes next.";
+
+      welcome.append(badge, title, p);
+      chat.appendChild(welcome);
+    }
+
+    function renderHistory() {
+      chat.innerHTML = "";
+      const history = loadHistory();
+
+      if (!history.length) {
+        showWelcome();
+        return;
+      }
+
+      history.forEach(item => createMessage(item.text, item.type, false));
       chat.scrollTop = chat.scrollHeight;
     }
 
+    function addMessage(text, type) {
+      createMessage(text, type, true);
+    }
+
+    function addTyping() {
+      const wrap = document.createElement("div");
+      wrap.className = "msg-wrap kyro";
+      wrap.id = "typing";
+
+      const div = document.createElement("div");
+      div.className = "msg kyro typing";
+      div.innerHTML = "<span></span><span></span><span></span>";
+
+      wrap.appendChild(div);
+      chat.appendChild(wrap);
+      chat.scrollTop = chat.scrollHeight;
+      return wrap;
+    }
+
+    function removeTyping() {
+      document.getElementById("typing")?.remove();
+    }
+
+    function storeMessage(text, type) {
+      const history = loadHistory();
+      history.push({ text, type });
+      saveHistory(history);
+    }
+
+    clear.addEventListener("click", () => {
+      if (!loadHistory().length) return;
+      localStorage.removeItem(HISTORY_KEY);
+      renderHistory();
+      input.focus();
+    });
+
+    renderHistory();
+
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
+
       const message = input.value.trim();
-      if (!message) return;
+      if (!message || send.disabled) return;
+
+      const existingWelcome = chat.querySelector(".welcome");
+      if (existingWelcome) existingWelcome.remove();
 
       addMessage(message, "user");
+      storeMessage(message, "user");
+
       input.value = "";
       send.disabled = true;
+      send.textContent = "…";
+      addTyping();
 
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({message})
+          body: JSON.stringify({ message })
         });
 
         const data = await res.json();
+        removeTyping();
+
         if (!res.ok) throw new Error(data.error || "Something went wrong.");
+
         addMessage(data.reply, "kyro");
+        storeMessage(data.reply, "kyro");
       } catch (error) {
-        addMessage("Error: " + error.message, "kyro");
+        removeTyping();
+        const errorMessage = "Error: " + error.message;
+        addMessage(errorMessage, "kyro");
+        storeMessage(errorMessage, "kyro");
       } finally {
         send.disabled = false;
+        send.textContent = "Send";
         input.focus();
       }
     });
