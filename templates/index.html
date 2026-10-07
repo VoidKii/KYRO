@@ -14,24 +14,24 @@
     html,body{height:100%}
     body{margin:0;background:radial-gradient(circle at 55% -10%,rgba(255,255,255,.08),transparent 34%),var(--bg);
       color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
-    button,input{font:inherit}
+    button,input,textarea{font:inherit}
     button{cursor:pointer}
     .shell{width:min(1280px,97vw);height:min(900px,94vh);margin:3vh auto;display:flex;overflow:hidden;
-      border:1px solid var(--border);border-radius:26px;background:rgba(14,14,17,.9);
-      box-shadow:0 30px 100px rgba(0,0,0,.55);backdrop-filter:blur(22px)}
-    .sidebar{width:255px;flex:0 0 255px;padding:14px;display:flex;flex-direction:column;
-      background:rgba(9,9,11,.85);border-right:1px solid var(--border)}
-    .new-chat{width:100%;height:44px;border:1px solid var(--border);border-radius:13px;background:#fff;color:#000;font-weight:850;
-      transition:.18s ease;display:flex;align-items:center;justify-content:center;gap:8px}
+      border:1px solid var(--border);border-radius:26px;background:rgba(14,14,17,.92);box-shadow:0 30px 100px rgba(0,0,0,.55);backdrop-filter:blur(22px)}
+    .sidebar{width:255px;flex:0 0 255px;padding:14px;display:flex;flex-direction:column;background:rgba(9,9,11,.85);border-right:1px solid var(--border)}
+    .new-chat{width:100%;height:44px;border:1px solid var(--border);border-radius:13px;background:#fff;color:#000;font-weight:850;transition:.18s ease}
     .new-chat:hover{transform:translateY(-1px);box-shadow:0 9px 25px rgba(0,0,0,.25)}
+    .side-buttons{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+    .side-btn{height:38px;border:1px solid var(--border);border-radius:11px;background:rgba(255,255,255,.025);color:#d7d7db;font-size:12px}
+    .side-btn:hover{background:rgba(255,255,255,.06)}
     .history-label{margin:22px 8px 9px;color:#66666e;text-transform:uppercase;font-size:10px;font-weight:800;letter-spacing:.9px}
     .history{flex:1;overflow:auto}
     .history::-webkit-scrollbar{width:6px}.history::-webkit-scrollbar-thumb{background:rgba(255,255,255,.09);border-radius:10px}
-    .chat-item{width:100%;padding:11px 12px;margin-bottom:5px;border:1px solid transparent;border-radius:12px;
-      background:transparent;color:#d7d7db;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:.16s ease}
+    .chat-item{width:100%;padding:11px 12px;margin-bottom:5px;border:1px solid transparent;border-radius:12px;background:transparent;
+      color:#d7d7db;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:.16s ease}
     .chat-item:hover{background:rgba(255,255,255,.05)}.chat-item.active{background:rgba(255,255,255,.075);border-color:var(--border)}
     .side-foot{padding-top:10px;border-top:1px solid var(--border);color:#66666e;font-size:11px;text-align:center}
-    .main{min-width:0;flex:1;display:flex;flex-direction:column}
+    .main{min-width:0;flex:1;display:flex;flex-direction:column;position:relative}
     header{height:76px;flex:0 0 76px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;
       border-bottom:1px solid var(--border);background:rgba(12,12,14,.62)}
     .brand{display:flex;align-items:center;gap:12px;min-width:0}
@@ -46,50 +46,66 @@
     .mobile-new{display:none}
     #chat{flex:1;min-height:0;overflow:auto;padding:28px clamp(16px,5vw,70px);scroll-behavior:smooth}
     #chat::-webkit-scrollbar{width:9px}#chat::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:10px}
-    .welcome{max-width:700px;margin:10vh auto 34px;text-align:center}
-    .welcome-badge{width:62px;height:62px;margin:0 auto 18px;display:grid;place-items:center;border:1px solid var(--border);
-      border-radius:20px;background:linear-gradient(145deg,#1c1c21,#0d0d10);font-size:25px;font-weight:950;
-      box-shadow:0 15px 50px rgba(0,0,0,.28)}
+    .welcome{max-width:700px;margin:9vh auto 34px;text-align:center}
+    .welcome-badge{width:62px;height:62px;margin:0 auto 18px;display:grid;place-items:center;border:1px solid var(--border);border-radius:20px;
+      background:linear-gradient(145deg,#1c1c21,#0d0d10);font-size:25px;font-weight:950;box-shadow:0 15px 50px rgba(0,0,0,.28)}
     .welcome h2{margin:0;font-size:clamp(28px,5vw,42px);letter-spacing:-1.5px}
     .welcome p{margin:10px auto 0;max-width:560px;color:var(--muted);line-height:1.6;font-size:14px}
     .msg-wrap{display:flex;max-width:850px;margin:0 auto 16px;animation:messageIn .24s ease both}
     .msg-wrap.user{justify-content:flex-end}.msg-wrap.kyro{justify-content:flex-start}
-    .msg{max-width:min(78%,720px);padding:13px 16px;border-radius:19px;line-height:1.62;white-space:pre-wrap;
-      word-break:break-word;font-size:14px}
+    .msg-block{max-width:min(78%,720px)}
+    .msg{padding:13px 16px;border-radius:19px;line-height:1.62;white-space:pre-wrap;word-break:break-word;font-size:14px}
     .msg.user{color:var(--userText);background:var(--user);border-bottom-right-radius:6px;box-shadow:0 8px 22px rgba(0,0,0,.18)}
     .msg.kyro{color:#e7e7ea;background:var(--kyro);border:1px solid var(--border);border-bottom-left-radius:6px}
     .msg-tools{display:flex;gap:5px;margin:5px 3px 0}
     .tool-btn{border:0;background:transparent;color:#66666e;font-size:11px;padding:3px 5px;border-radius:6px}
     .tool-btn:hover{color:#d5d5da;background:rgba(255,255,255,.05)}
+    .sources{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+    .source{display:inline-flex;align-items:center;max-width:230px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;
+      color:#bfc0c7;text-decoration:none;background:rgba(255,255,255,.025);font-size:10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    .source:hover{background:rgba(255,255,255,.07);color:#fff}
     .typing{display:inline-flex;align-items:center;gap:6px;padding:14px 16px}
     .typing span{width:6px;height:6px;border-radius:50%;background:#aaaab1;animation:bounce 1.15s infinite ease-in-out}
     .typing span:nth-child(2){animation-delay:.12s}.typing span:nth-child(3){animation-delay:.24s}
-    form{padding:14px 16px 17px;border-top:1px solid var(--border);background:rgba(10,10,12,.72)}
-    .composer{width:min(850px,100%);margin:0 auto;display:flex;align-items:center;gap:9px;padding:8px;
-      border:1px solid var(--border);border-radius:18px;background:#0e0e11;box-shadow:0 10px 35px rgba(0,0,0,.2)}
-    input{min-width:0;flex:1;border:0;outline:none;padding:11px 12px;color:#fff;background:transparent}
+    form{padding:10px 16px 17px;border-top:1px solid var(--border);background:rgba(10,10,12,.72)}
+    .attachment{width:min(850px,100%);margin:0 auto 8px;display:none;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;
+      border:1px solid var(--border);border-radius:11px;background:rgba(255,255,255,.025);color:#c5c5cb;font-size:11px}
+    .attachment.show{display:flex}.attachment button{border:0;background:transparent;color:#77777f}
+    .composer{width:min(850px,100%);margin:0 auto;display:flex;align-items:center;gap:7px;padding:8px;border:1px solid var(--border);
+      border-radius:18px;background:#0e0e11;box-shadow:0 10px 35px rgba(0,0,0,.2)}
+    .mini-btn{width:38px;height:38px;flex:0 0 38px;border:1px solid transparent;border-radius:11px;background:transparent;color:#8f8f98}
+    .mini-btn:hover{background:rgba(255,255,255,.06);color:#fff}.mini-btn.active{background:#fff;color:#000}
+    input{min-width:0;flex:1;border:0;outline:none;padding:11px 9px;color:#fff;background:transparent}
     input::placeholder{color:#66666e}
     .send{height:40px;padding:0 17px;border:0;border-radius:13px;background:#fff;color:#000;font-weight:850;transition:.18s ease}
     .send:hover:not(:disabled){transform:translateY(-1px)}.send:disabled{opacity:.45;cursor:wait}
-    .hint{width:min(850px,100%);margin:8px auto 0;text-align:center;color:#5f5f67;font-size:11px}
+    .tools-row{width:min(850px,100%);margin:7px auto 0;display:flex;align-items:center;gap:6px;min-height:26px}
+    .tool-toggle{height:26px;padding:0 9px;border:1px solid var(--border);border-radius:8px;background:transparent;color:#777780;font-size:10px}
+    .tool-toggle:hover{background:rgba(255,255,255,.05)}.tool-toggle.active{color:#000;background:#fff;border-color:#fff}
+    .hint{margin-left:auto;color:#55555d;font-size:10px}
+    .memory-panel{display:none;position:absolute;z-index:30;left:18px;bottom:76px;width:min(390px,calc(100% - 36px));
+      padding:14px;border:1px solid var(--border);border-radius:16px;background:#111114;box-shadow:0 24px 70px rgba(0,0,0,.55)}
+    .memory-panel.open{display:block}
+    .memory-panel h3{margin:0 0 6px;font-size:14px}.memory-panel p{margin:0 0 10px;color:#777780;font-size:11px;line-height:1.5}
+    textarea{width:100%;min-height:105px;resize:vertical;border:1px solid var(--border);border-radius:11px;outline:none;padding:10px;
+      background:#0b0b0e;color:#eee}
+    .memory-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:8px}.memory-actions button{height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:transparent;color:#ccc}
+    .memory-actions .save{background:#fff;color:#000;border-color:#fff;font-weight:800}
+    #fileInput{display:none}
     @keyframes messageIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
     @keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.45}30%{transform:translateY(-4px);opacity:1}}
-    @media(max-width:850px){
-      .sidebar{width:220px;flex-basis:220px}
-      .msg{max-width:86%}
-    }
+    @media(max-width:850px){.sidebar{width:220px;flex-basis:220px}.msg-block{max-width:86%}}
     @media(max-width:700px){
-      body{overflow:hidden}.shell{width:100vw;height:100vh;min-height:100svh;margin:0;border:0;border-radius:0}
-      .sidebar{position:fixed;z-index:20;inset:0 auto 0 0;width:280px;transform:translateX(-105%);
-        box-shadow:25px 0 70px rgba(0,0,0,.5);transition:transform .22s ease}
+      .shell{width:100vw;height:100vh;min-height:100svh;margin:0;border:0;border-radius:0}
+      .sidebar{position:fixed;z-index:50;inset:0 auto 0 0;width:280px;transform:translateX(-105%);box-shadow:25px 0 70px rgba(0,0,0,.5);transition:transform .22s ease}
       .sidebar.open{transform:translateX(0)}
       .main{width:100%}.mobile-new{display:block}
       header{height:68px;flex-basis:68px;padding:12px 14px}.logo{width:40px;height:40px;flex-basis:40px}
-      .top-actions{gap:6px}.icon-btn{width:38px;height:38px}
-      #chat{padding:20px 12px 22px}.welcome{margin:6vh auto 28px;padding:0 10px}.welcome h2{font-size:30px}
-      .welcome p{font-size:13px}.msg{max-width:88%;font-size:13px}
-      form{padding:10px 10px calc(10px + env(safe-area-inset-bottom))}.composer{border-radius:16px}
-      input{padding:10px 8px}.send{padding:0 14px}.hint{display:none}
+      .top-actions{gap:6px}.icon-btn{width:38px;height:38px}#chat{padding:20px 12px 22px}
+      .welcome{margin:6vh auto 28px;padding:0 10px}.welcome h2{font-size:30px}.welcome p{font-size:13px}
+      .msg-block{max-width:88%}.msg{font-size:13px}
+      form{padding:9px 10px calc(10px + env(safe-area-inset-bottom))}.composer{border-radius:16px}
+      input{padding:10px 7px}.send{padding:0 14px}.hint{display:none}.tools-row{margin-top:6px}
     }
   </style>
 </head>
@@ -97,6 +113,10 @@
   <main class="shell">
     <aside class="sidebar" id="sidebar">
       <button class="new-chat" id="newChat">＋ New chat</button>
+      <div class="side-buttons">
+        <button class="side-btn" id="memoryBtn" type="button">🧠 Memory</button>
+        <button class="side-btn" id="clearAll" type="button">Clear all</button>
+      </div>
       <div class="history-label">Your chats</div>
       <div class="history" id="historyList"></div>
       <div class="side-foot">KYRO · Personal AI</div>
@@ -120,277 +140,234 @@
       <section id="chat"></section>
 
       <form id="form">
+        <div class="attachment" id="attachment">
+          <span id="attachmentName">file</span>
+          <button id="removeFile" type="button" aria-label="Remove file">✕</button>
+        </div>
+
         <div class="composer">
+          <button class="mini-btn" id="fileBtn" type="button" title="Attach a file" aria-label="Attach a file">＋</button>
           <input id="message" autocomplete="off" placeholder="Message KYRO..." maxlength="4000">
           <button class="send" id="send" type="submit">Send</button>
         </div>
-        <div class="hint">Enter to send · Shift+Enter for a new line · KYRO can make mistakes.</div>
+
+        <input id="fileInput" type="file" accept="image/*,.pdf,.txt,.csv,.json,.js,.py,.html,.css,.md,.xml">
+
+        <div class="tools-row">
+          <button class="tool-toggle" id="webToggle" type="button">🌐 Web</button>
+          <button class="tool-toggle" id="codeToggle" type="button">⌘ Code</button>
+          <div class="hint">Enter to send · Shift+Enter for a new line</div>
+        </div>
       </form>
+
+      <section class="memory-panel" id="memoryPanel">
+        <h3>KYRO Memory</h3>
+        <p>Save things you want KYRO to remember across chats. This is stored only in this browser.</p>
+        <textarea id="memoryText" maxlength="6000" placeholder="Example: I like short beginner-friendly explanations. I'm building KYRO on GitHub."></textarea>
+        <div class="memory-actions">
+          <button id="closeMemory" type="button">Close</button>
+          <button class="save" id="saveMemory" type="button">Save memory</button>
+        </div>
+      </section>
     </section>
   </main>
 
   <script>
-    const form = document.getElementById("form");
-    const input = document.getElementById("message");
-    const chat = document.getElementById("chat");
-    const send = document.getElementById("send");
-    const clear = document.getElementById("clear");
-    const newChatBtn = document.getElementById("newChat");
-    const historyList = document.getElementById("historyList");
-    const sidebar = document.getElementById("sidebar");
-    const menuBtn = document.getElementById("menuBtn");
+    const form=document.getElementById("form");
+    const input=document.getElementById("message");
+    const chat=document.getElementById("chat");
+    const send=document.getElementById("send");
+    const clear=document.getElementById("clear");
+    const newChatBtn=document.getElementById("newChat");
+    const clearAll=document.getElementById("clearAll");
+    const historyList=document.getElementById("historyList");
+    const sidebar=document.getElementById("sidebar");
+    const menuBtn=document.getElementById("menuBtn");
+    const fileBtn=document.getElementById("fileBtn");
+    const fileInput=document.getElementById("fileInput");
+    const attachment=document.getElementById("attachment");
+    const attachmentName=document.getElementById("attachmentName");
+    const removeFile=document.getElementById("removeFile");
+    const webToggle=document.getElementById("webToggle");
+    const codeToggle=document.getElementById("codeToggle");
+    const memoryBtn=document.getElementById("memoryBtn");
+    const memoryPanel=document.getElementById("memoryPanel");
+    const memoryText=document.getElementById("memoryText");
+    const saveMemory=document.getElementById("saveMemory");
+    const closeMemory=document.getElementById("closeMemory");
 
-    const CHATS_KEY = "kyro_chats_v2";
-    const ACTIVE_KEY = "kyro_active_chat_v2";
+    const CHATS_KEY="kyro_chats_v3";
+    const ACTIVE_KEY="kyro_active_chat_v3";
+    const MEMORY_KEY="kyro_memory_v1";
 
-    let chats = loadChats();
-    let activeId = localStorage.getItem(ACTIVE_KEY);
+    let chats=loadChats();
+    let activeId=localStorage.getItem(ACTIVE_KEY);
+    let selectedFile=null;
 
-    function uid(){
-      return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
-    }
-
-    function loadChats(){
-      try {
-        const saved = JSON.parse(localStorage.getItem(CHATS_KEY) || "[]");
-        return Array.isArray(saved) ? saved : [];
-      } catch { return []; }
-    }
-
-    function persist(){
-      localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
-      if(activeId) localStorage.setItem(ACTIVE_KEY, activeId);
-    }
+    function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+    function loadChats(){try{const x=JSON.parse(localStorage.getItem(CHATS_KEY)||"[]");return Array.isArray(x)?x:[]}catch{return[]}}
+    function persist(){localStorage.setItem(CHATS_KEY,JSON.stringify(chats));if(activeId)localStorage.setItem(ACTIVE_KEY,activeId)}
+    function currentChat(){return chats.find(c=>c.id===activeId)}
+    function ensureChat(){if(!currentChat()) createChat()}
+    function titleFrom(text){const clean=text.replace(/\s+/g," ").trim();return clean.length>32?clean.slice(0,32).trim()+"…":(clean||"New chat")}
 
     function createChat(){
-      const chatObject = { id: uid(), title: "New chat", messages: [], updatedAt: Date.now() };
-      chats.unshift(chatObject);
-      activeId = chatObject.id;
-      persist();
-      renderHistory();
-      renderMessages();
-      sidebar.classList.remove("open");
-      input.focus();
-    }
-
-    function currentChat(){
-      return chats.find(c => c.id === activeId);
-    }
-
-    function ensureChat(){
-      if(!currentChat()) createChat();
-    }
-
-    function titleFrom(text){
-      const clean = text.replace(/\s+/g, " ").trim();
-      return clean.length > 32 ? clean.slice(0,32).trim() + "…" : (clean || "New chat");
+      const c={id:uid(),title:"New chat",messages:[],updatedAt:Date.now()};
+      chats.unshift(c);activeId=c.id;persist();renderHistory();renderMessages();sidebar.classList.remove("open");input.focus();
     }
 
     function renderHistory(){
-      historyList.innerHTML = "";
-      chats.sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-
-      if(!chats.length){
-        const empty = document.createElement("div");
-        empty.textContent = "No chats yet.";
-        empty.style.cssText = "padding:12px 8px;color:#66666e;font-size:12px;";
-        historyList.appendChild(empty);
-        return;
-      }
-
-      chats.forEach(c => {
-        const button = document.createElement("button");
-        button.className = "chat-item" + (c.id === activeId ? " active" : "");
-        button.textContent = c.title || "New chat";
-        button.title = c.title || "New chat";
-        button.type = "button";
-        button.addEventListener("click", () => {
-          activeId = c.id;
-          persist();
-          renderHistory();
-          renderMessages();
-          sidebar.classList.remove("open");
-          input.focus();
-        });
-        historyList.appendChild(button);
+      historyList.innerHTML="";
+      chats.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+      if(!chats.length){const e=document.createElement("div");e.textContent="No chats yet.";e.style.cssText="padding:12px 8px;color:#66666e;font-size:12px;";historyList.appendChild(e);return}
+      chats.forEach(c=>{
+        const b=document.createElement("button");
+        b.className="chat-item"+(c.id===activeId?" active":"");b.textContent=c.title||"New chat";b.title=b.textContent;b.type="button";
+        b.addEventListener("click",()=>{activeId=c.id;persist();renderHistory();renderMessages();sidebar.classList.remove("open");input.focus()});
+        historyList.appendChild(b);
       });
     }
 
-    function createMessage(text, type, animate){
-      const wrap = document.createElement("div");
-      wrap.className = "msg-wrap " + type;
-      if(!animate) wrap.style.animation = "none";
+    function createMessage(text,type,animate,sources=[]){
+      const wrap=document.createElement("div");wrap.className="msg-wrap "+type;if(!animate)wrap.style.animation="none";
+      const block=document.createElement("div");block.className="msg-block";
+      const div=document.createElement("div");div.className="msg "+type;div.textContent=text;block.appendChild(div);
 
-      const div = document.createElement("div");
-      div.className = "msg " + type;
-      div.textContent = text;
-      wrap.appendChild(div);
-
-      if(type === "kyro" && text){
-        const tools = document.createElement("div");
-        tools.className = "msg-tools";
-
-        const copy = document.createElement("button");
-        copy.className = "tool-btn";
-        copy.type = "button";
-        copy.textContent = "Copy";
-        copy.onclick = async () => {
-          try {
-            await navigator.clipboard.writeText(text);
-            copy.textContent = "Copied";
-            setTimeout(() => copy.textContent = "Copy", 1200);
-          } catch {}
-        };
-
+      if(type==="kyro"){
+        const tools=document.createElement("div");tools.className="msg-tools";
+        const copy=document.createElement("button");copy.className="tool-btn";copy.type="button";copy.textContent="Copy";
+        copy.onclick=async()=>{try{await navigator.clipboard.writeText(text);copy.textContent="Copied";setTimeout(()=>copy.textContent="Copy",1200)}catch{}};
         tools.appendChild(copy);
-        div.appendChild(tools);
+
+        if(sources.length){
+          const sourceWrap=document.createElement("div");sourceWrap.className="sources";
+          sources.forEach(s=>{
+            if(!s.url)return;
+            const a=document.createElement("a");a.className="source";a.href=s.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=s.title||s.url;a.title=s.url;
+            sourceWrap.appendChild(a);
+          });
+          tools.appendChild(sourceWrap);
+        }
+        block.appendChild(tools);
       }
 
-      chat.appendChild(wrap);
-      chat.scrollTop = chat.scrollHeight;
+      wrap.appendChild(block);chat.appendChild(wrap);chat.scrollTop=chat.scrollHeight;
     }
 
     function showWelcome(){
-      const welcome = document.createElement("div");
-      welcome.className = "welcome";
-
-      const badge = document.createElement("div");
-      badge.className = "welcome-badge";
-      badge.textContent = "K";
-
-      const title = document.createElement("h2");
-      title.textContent = "What are we building today?";
-
-      const p = document.createElement("p");
-      p.textContent = "Talk to KYRO, your personal AI assistant for ideas, coding, projects, learning, and whatever comes next.";
-
-      welcome.append(badge, title, p);
-      chat.appendChild(welcome);
+      const w=document.createElement("div");w.className="welcome";
+      const badge=document.createElement("div");badge.className="welcome-badge";badge.textContent="K";
+      const title=document.createElement("h2");title.textContent="What are we building today?";
+      const p=document.createElement("p");p.textContent="Talk to KYRO for ideas, coding, current info, file analysis, calculations, and whatever comes next.";
+      w.append(badge,title,p);chat.appendChild(w);
     }
 
     function renderMessages(){
-      chat.innerHTML = "";
-      const c = currentChat();
-
-      if(!c || !c.messages.length){
-        showWelcome();
-        return;
-      }
-
-      c.messages.forEach(m => createMessage(m.text, m.type, false));
-      chat.scrollTop = chat.scrollHeight;
+      chat.innerHTML="";const c=currentChat();
+      if(!c||!c.messages.length){showWelcome();return}
+      c.messages.forEach(m=>createMessage(m.text,m.type,false,m.sources||[]));chat.scrollTop=chat.scrollHeight;
     }
 
     function addTyping(){
-      const wrap = document.createElement("div");
-      wrap.className = "msg-wrap kyro";
-      wrap.id = "typing";
+      const wrap=document.createElement("div");wrap.className="msg-wrap kyro";wrap.id="typing";
+      const block=document.createElement("div");block.className="msg-block";
+      const div=document.createElement("div");div.className="msg kyro typing";div.innerHTML="<span></span><span></span><span></span>";
+      block.appendChild(div);wrap.appendChild(block);chat.appendChild(wrap);chat.scrollTop=chat.scrollHeight;
+    }
+    function removeTyping(){document.getElementById("typing")?.remove()}
 
-      const div = document.createElement("div");
-      div.className = "msg kyro typing";
-      div.innerHTML = "<span></span><span></span><span></span>";
-
-      wrap.appendChild(div);
-      chat.appendChild(wrap);
-      chat.scrollTop = chat.scrollHeight;
+    function storeMessage(text,type,sources=[]){
+      const c=currentChat();if(!c)return;
+      c.messages.push({text,type,sources});c.updatedAt=Date.now();
+      if(type==="user"&&c.title==="New chat")c.title=titleFrom(text);
+      persist();renderHistory();
     }
 
-    function removeTyping(){
-      document.getElementById("typing")?.remove();
+    function getHistoryForAPI(){
+      const c=currentChat();if(!c)return[];
+      return c.messages.slice(-16).map(m=>({role:m.type==="user"?"user":"model",text:m.text}));
     }
 
-    function addStoredMessage(text, type){
-      const c = currentChat();
-      if(!c) return;
-      c.messages.push({text, type});
-      c.updatedAt = Date.now();
+    function loadMemory(){return localStorage.getItem(MEMORY_KEY)||""}
+    function refreshMemory(){memoryText.value=loadMemory()}
 
-      if(type === "user" && c.title === "New chat"){
-        c.title = titleFrom(text);
-      }
+    newChatBtn.addEventListener("click",createChat);
 
-      persist();
-      renderHistory();
-    }
-
-    function addVisibleMessage(text, type){
-      createMessage(text, type, true);
-    }
-
-    newChatBtn.addEventListener("click", createChat);
-
-    clear.addEventListener("click", () => {
-      const c = currentChat();
-      if(!c || !c.messages.length) return;
-      c.messages = [];
-      c.title = "New chat";
-      c.updatedAt = Date.now();
-      persist();
-      renderHistory();
-      renderMessages();
-      input.focus();
+    clear.addEventListener("click",()=>{
+      const c=currentChat();if(!c||!c.messages.length)return;
+      c.messages=[];c.title="New chat";c.updatedAt=Date.now();persist();renderHistory();renderMessages();input.focus();
     });
 
-    menuBtn.addEventListener("click", () => sidebar.classList.toggle("open"));
-
-    input.addEventListener("keydown", event => {
-      if(event.key === "Enter" && !event.shiftKey){
-        event.preventDefault();
-        form.requestSubmit();
-      }
+    clearAll.addEventListener("click",()=>{
+      if(!chats.length)return;
+      localStorage.removeItem(CHATS_KEY);localStorage.removeItem(ACTIVE_KEY);chats=[];activeId=null;createChat();
     });
 
-    form.addEventListener("submit", async event => {
+    menuBtn.addEventListener("click",()=>sidebar.classList.toggle("open"));
+
+    memoryBtn.addEventListener("click",()=>{refreshMemory();memoryPanel.classList.toggle("open")});
+    closeMemory.addEventListener("click",()=>memoryPanel.classList.remove("open"));
+    saveMemory.addEventListener("click",()=>{localStorage.setItem(MEMORY_KEY,memoryText.value.trim());memoryPanel.classList.remove("open")});
+
+    fileBtn.addEventListener("click",()=>fileInput.click());
+    fileInput.addEventListener("change",()=>{
+      selectedFile=fileInput.files?.[0]||null;
+      if(selectedFile){attachmentName.textContent=selectedFile.name;attachment.classList.add("show")}
+      else{attachment.classList.remove("show")}
+    });
+    removeFile.addEventListener("click",()=>{
+      selectedFile=null;fileInput.value="";attachment.classList.remove("show");
+    });
+
+    webToggle.addEventListener("click",()=>webToggle.classList.toggle("active"));
+    codeToggle.addEventListener("click",()=>codeToggle.classList.toggle("active"));
+
+    input.addEventListener("keydown",event=>{
+      if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();form.requestSubmit()}
+    });
+
+    form.addEventListener("submit",async event=>{
       event.preventDefault();
-      const message = input.value.trim();
-      if(!message || send.disabled) return;
+      const message=input.value.trim();
+      if(!message||send.disabled)return;
 
       ensureChat();
-      const existingWelcome = chat.querySelector(".welcome");
-      if(existingWelcome) existingWelcome.remove();
+      const existingWelcome=chat.querySelector(".welcome");if(existingWelcome)existingWelcome.remove();
 
-      addVisibleMessage(message, "user");
-      addStoredMessage(message, "user");
+      const historyBefore=getHistoryForAPI();
+      addVisible(message,"user");
+      addStored(message,"user");
 
-      input.value = "";
-      send.disabled = true;
-      send.textContent = "…";
-      addTyping();
+      input.value="";send.disabled=true;send.textContent="…";addTyping();
 
-      try {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({message})
-        });
+      const payload=new FormData();
+      payload.append("message",message);
+      payload.append("history",JSON.stringify(historyBefore));
+      payload.append("memory",loadMemory());
+      payload.append("web",String(webToggle.classList.contains("active")));
+      payload.append("code",String(codeToggle.classList.contains("active")));
+      if(selectedFile)payload.append("file",selectedFile);
 
-        const data = await res.json();
-        removeTyping();
+      try{
+        const res=await fetch("/api/chat",{method:"POST",body:payload});
+        const data=await res.json();removeTyping();
+        if(!res.ok)throw new Error(data.error||"Something went wrong.");
 
-        if(!res.ok) throw new Error(data.error || "Something went wrong.");
-
-        addVisibleMessage(data.reply, "kyro");
-        addStoredMessage(data.reply, "kyro");
-      } catch(error) {
-        removeTyping();
-        const errorMessage = "Error: " + error.message;
-        addVisibleMessage(errorMessage, "kyro");
-        addStoredMessage(errorMessage, "kyro");
-      } finally {
-        send.disabled = false;
-        send.textContent = "Send";
-        input.focus();
+        addVisible(data.reply,"kyro",data.sources||[]);
+        addStored(data.reply,"kyro",data.sources||[]);
+      }catch(error){
+        removeTyping();const errorMessage="Error: "+error.message;addVisible(errorMessage,"kyro");addStored(errorMessage,"kyro");
+      }finally{
+        send.disabled=false;send.textContent="Send";input.focus();
+        selectedFile=null;fileInput.value="";attachment.classList.remove("show");
       }
     });
 
-    if(!activeId || !chats.some(c => c.id === activeId)){
-      if(chats.length) activeId = chats[0].id;
-      else createChat();
-    }
+    function addVisible(text,type,sources=[]){createMessage(text,type,true,sources)}
+    refreshMemory();
 
-    persist();
-    renderHistory();
-    renderMessages();
+    if(!activeId||!chats.some(c=>c.id===activeId)){if(chats.length)activeId=chats[0].id;else createChat()}
+    persist();renderHistory();renderMessages();
   </script>
 </body>
 </html>
