@@ -9,7 +9,6 @@ from urllib.request import Request, urlopen
 from flask import Flask, jsonify, render_template, request
 from dotenv import load_dotenv
 from google import genai
-from google.genai import types
 
 load_dotenv()
 
@@ -474,64 +473,27 @@ def step_label(step):
     return ""
 
 
-def generate_tool_declarations():
-    declarations = []
-    for item in build_tool_definitions():
-        declaration = dict(item)
-        declaration.pop("type", None)
-        declarations.append(declaration)
-    return declarations
+def build_agent_tools():
+    return [
+        {"type": "google_search"},
+        {"type": "code_execution"},
+        *build_tool_definitions(),
+    ]
 
 
-def agent_config():
-    return types.GenerateContentConfig(
-        tools=[
-            types.Tool(
-                google_search=types.GoogleSearch(),
-                function_declarations=generate_tool_declarations(),
-            ),
-            types.Tool(code_execution=types.CodeExecution()),
-        ],
-        tool_config=types.ToolConfig(
-            include_server_side_tool_invocations=True,
-            function_calling_config=types.FunctionCallingConfig(
-                mode="VALIDATED"
-            ),
-        ),
-    )
-
-
-def response_content(response):
-    try:
-        candidate = response.candidates[0]
-        return candidate.content
-    except (AttributeError, IndexError, TypeError):
-        return None
-
-
-def extract_function_calls(response):
-    calls = []
-    content = response_content(response)
-    if content is None:
-        return calls
-
-    for part in getattr(content, "parts", []) or []:
-        call = getattr(part, "function_call", None)
-        if call is not None:
-            calls.append(call)
-    return calls
-
-
-def extract_response_text(response):
-    content = response_content(response)
-    if content is None:
-        return ""
+def extract_output_text(interaction):
+    text_value = str(getattr(interaction, "output_text", "") or "").strip()
+    if text_value:
+        return text_value
 
     chunks = []
-    for part in getattr(content, "parts", []) or []:
-        text_value = getattr(part, "text", None)
-        if text_value:
-            chunks.append(str(text_value))
+    for step in list(getattr(interaction, "steps", []) or []):
+        if str(getattr(step, "type", "") or "") != "model_output":
+            continue
+        for content in list(getattr(step, "content", []) or []):
+            value = getattr(content, "text", None)
+            if value:
+                chunks.append(str(value))
     return "\n".join(chunks).strip()
 
 
@@ -540,84 +502,98 @@ def run_agent(message, history, previous_interaction_id, session_id):
         return None, None, [], "GEMINI_API_KEY is not configured yet."
 
     memory = memory_snapshot(session_id)
+    tools = build_agent_tools()
     prior = history_block(history)
 
-    prompt = (
-        f"{SYSTEM_PROMPT}\n\n"
-        f"CURRENT MEMORY SNAPSHOT\n{memory}\n\n"
-        f"PREVIOUS CHAT HISTORY\n{prior or 'None'}\n\n"
-        f"CURRENT USER MESSAGE\n{message}"
-    )
-
-    contents = [
-        types.Content(
-            role="user",
-            parts=[types.Part(text=prompt)],
+    if previous_interaction_id:
+        input_value = (
+            f"CURRENT MEMORY SNAPSHOT\n{memory}\n\n"
+            f"CURRENT USER MESSAGE\n{message}"
         )
-    ]
+    else:
+        input_value = (
+            f"{SYSTEM_PROMPT}\n\n"
+            f"CURRENT MEMORY SNAPSHOT\n{memory}\n\n"
+            f"PREVIOUS CHAT HISTORY\n{prior or 'None'}\n\n"
+            f"CURRENT USER MESSAGE\n{message}"
+        )
 
+    create_args = {
+        "model": MODEL,
+        "input": input_value,
+        "tools": tools,
+        "generation_config": {"thinking_level": THINKING_LEVEL},
+    }
+    if previous_interaction_id:
+        create_args["previous_interaction_id"] = previous_interaction_id
+
+    interaction = client.interactions.create(**create_args)
     activity = []
 
     for _ in range(MAX_TOOL_ROUNDS):
-        response = client.models.generate_content(
-            model=MODEL,
-            contents=contents,
-            config=agent_config(),
-        )
+        function_steps = [
+            step for step in list(getattr(interaction, "steps", []) or [])
+            if str(getattr(step, "type", "") or "") == "function_call"
+        ]
 
-        content = response_content(response)
-        if content is None:
-            return None, None, activity, "Gemini returned an empty response."
+        # Built-in Search and Code Execution are handled by Gemini automatically.
+        for step in list(getattr(interaction, "steps", []) or []):
+            step_type = str(getattr(step, "type", "") or "")
+            label = ""
+            if step_type == "google_search_call":
+                label = "Web research"
+            elif step_type == "code_execution_call":
+                label = "Code execution"
+            if label and label not in activity:
+                activity.append(label)
 
-        response_text = extract_response_text(response)
-        for label in ("Web research", "Code execution"):
+        if not function_steps:
+            reply = extract_output_text(interaction)
+            return (
+                reply or "I completed the agent run, but Gemini returned no text.",
+                str(getattr(interaction, "id", "") or "") or None,
+                activity,
+                None,
+            )
+
+        results = []
+        for step in function_steps:
+            name = str(getattr(step, "name", "") or "")
+            raw_args = getattr(step, "arguments", {}) or {}
+
+            if isinstance(raw_args, str):
+                try:
+                    args = json.loads(raw_args)
+                except json.JSONDecodeError:
+                    args = {}
+            else:
+                args = dict(raw_args)
+
+            result = execute_tool(name, args, session_id)
+            label = name.replace("_", " ").title()
             if label not in activity:
-                for part in getattr(content, "parts", []) or []:
-                    if label == "Web research" and (
-                        getattr(part, "google_search", None)
-                        or getattr(part, "tool_call", None)
-                    ):
-                        activity.append(label)
-                    if label == "Code execution" and (
-                        getattr(part, "executable_code", None)
-                        or getattr(part, "code_execution_result", None)
-                    ):
-                        activity.append(label)
+                activity.append(label)
 
-        calls = extract_function_calls(response)
-
-        if not calls:
-            if not response_text:
-                response_text = "I completed the agent run, but Gemini returned no text."
-            return response_text, None, activity, None
-
-        contents.append(content)
-
-        result_parts = []
-        for call in calls:
-            name = str(getattr(call, "name", "") or "")
-            args = getattr(call, "args", {}) or {}
-            result = execute_tool(name, dict(args), session_id)
-            activity.append(name.replace("_", " ").title())
-
-            call_result = {
-                "name": name,
-                "response": result,
-            }
-
-            call_id = str(getattr(call, "id", "") or "")
-            if call_id:
-                call_result["id"] = call_id
-
-            result_parts.append(
-                types.Part(function_response=types.FunctionResponse(**call_result))
+            results.append(
+                {
+                    "type": "function_result",
+                    "name": name,
+                    "call_id": str(getattr(step, "id", "") or ""),
+                    "result": [
+                        {
+                            "type": "text",
+                            "text": json.dumps(result, ensure_ascii=False),
+                        }
+                    ],
+                }
             )
 
-        contents.append(
-            types.Content(
-                role="user",
-                parts=result_parts,
-            )
+        interaction = client.interactions.create(
+            model=MODEL,
+            previous_interaction_id=interaction.id,
+            tools=tools,
+            input=results,
+            generation_config={"thinking_level": THINKING_LEVEL},
         )
 
     return None, None, activity, "KYRO hit its maximum tool rounds for this request."
@@ -632,17 +608,12 @@ def fallback_chat(message, history, session_id):
         f"HISTORY\n{prior or 'None'}\n\n"
         f"USER\n{message}"
     )
-    response = client.models.generate_content(
+    interaction = client.interactions.create(
         model=MODEL,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            thinking_config=types.ThinkingConfig(
-                thinking_level=THINKING_LEVEL
-            )
-        ),
+        input=prompt,
+        generation_config={"thinking_level": THINKING_LEVEL},
     )
-    reply = str(getattr(response, "text", "") or "").strip()
-    return reply or "I couldn't generate a response."
+    return extract_output_text(interaction) or "I couldn't generate a response."
 
 
 @app.get("/")
@@ -704,13 +675,18 @@ def chat():
                 session_id=session_id,
             )
         except Exception as agent_error:
+            app.logger.exception("KYRO agent failed")
             # Keep ordinary chat alive if an optional agent tool fails.
-            reply = fallback_chat(message, history, session_id)
+            try:
+                reply = fallback_chat(message, history, session_id)
+            except Exception:
+                app.logger.exception("KYRO fallback chat failed")
+                reply = None
             interaction_id = None
             activity = ["Fallback chat mode"]
             error = None
             if not reply:
-                error = str(agent_error)
+                error = "KYRO could not reach Gemini. Check the Render logs for the exact API error."
 
         if error:
             return jsonify({"error": error, "activity": activity}), 500
