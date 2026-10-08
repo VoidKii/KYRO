@@ -1,29 +1,40 @@
 # KYRO
 
-A clean personal AI assistant project.
+KYRO is a personal AI agent built with Flask and the Google Gen AI SDK.
 
-## Stack
+## What KYRO can do
 
-- Python
-- Flask
-- OpenAI Responses API
-- Simple HTML/CSS/JavaScript frontend
+- Chat with persistent server-side Gemini interactions
+- Search the web with Gemini's built-in Google Search tool
+- Run code with Gemini's built-in code execution tool
+- Remember useful user-scoped facts with SQLite-backed memory
+- Inspect allowed GitHub repositories
+- Create or update GitHub text files when GitHub write access is explicitly enabled
+- Show agent activity in the UI
+- Keep chat history locally in the browser
 
-## Run locally
+## Local setup
 
 1. Create a virtual environment.
-2. Install dependencies:
+2. Install dependencies with `pip install -r requirements.txt`.
+3. Copy `.env.example` to `.env`.
+4. Add your `GEMINI_API_KEY`.
+5. Run `python app.py`.
 
-   pip install -r requirements.txt
+## GitHub write mode
 
-3. Copy .env.example to .env.
-4. Put your OpenAI API key in .env.
-5. Start KYRO:
+For GitHub editing, configure:
 
-   python app.py
+- `GITHUB_TOKEN`
+- `KYRO_GITHUB_WRITE=true`
+- `KYRO_GITHUB_ALLOWED_REPOS=owner/repository`
 
-6. Open http://127.0.0.1:5000
+KYRO intentionally does not expose destructive repository operations.
 
-Keep your real API key in .env. Never commit it to GitHub.
+## Health check
 
-KYRO uses the OpenAI Responses API for new integrations.
+`GET /api/health` returns service and capability status.
+
+## Deployment
+
+The included `render.yaml` is configured for a Render web service using Gunicorn.
