@@ -8,4 +8,12 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: KYRO_MODEL
-        value: gemini-3.5-flash-lite
+        value: gemini-3.8-flash
+      - key: KYRO_THINKING_LEVEL
+        value: medium
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: KYRO_GITHUB_WRITE
+        value: "false"
+      - key: KYRO_GITHUB_ALLOWED_REPOS
+        value: VoidKii/KYRO
