@@ -3,7 +3,7 @@ services:
     name: kyro
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn --timeout 40 app:app
     envVars:
       - key: GEMINI_API_KEY
         sync: false
