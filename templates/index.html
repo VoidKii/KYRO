@@ -486,23 +486,38 @@
     async function callKyro(message, opts = {}){
       const c = currentChat();
       const interactionId = opts.fresh ? null : (c?.interactionId || null);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
 
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({
-          message,
-          history: apiHistory(12),
-          interaction_id: interactionId,
-          session_id: sessionId
-        })
-      });
+      try{
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          signal: controller.signal,
+          body: JSON.stringify({
+            message,
+            history: apiHistory(12),
+            interaction_id: interactionId,
+            session_id: sessionId
+          })
+        });
 
-      let data = {};
-      try{ data = await res.json(); }catch{}
+        let data = {};
+        try{ data = await res.json(); }catch{}
 
-      if(!res.ok) throw new Error(data.error || "Something went wrong.");
-      return data;
+        if(!res.ok) throw new Error(data.error || ("Request failed (" + res.status + ")."));
+        return data;
+      }catch(error){
+        if(error?.name === "AbortError"){
+          throw new Error("KYRO took too long to respond. The request was stopped so the thinking indicator does not get stuck.");
+        }
+        if(error instanceof TypeError){
+          throw new Error("KYRO could not reach the server. Check your connection and try again.");
+        }
+        throw error;
+      }finally{
+        clearTimeout(timeout);
+      }
     }
 
     async function regenerateResponse(userIndex, button){
