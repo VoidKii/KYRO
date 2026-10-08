@@ -1,4 +1,4 @@
 Flask
 python-dotenv
-google-genai
+google-genai>=2.0.0
 gunicorn
