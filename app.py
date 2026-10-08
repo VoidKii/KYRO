@@ -9,6 +9,7 @@ from urllib.request import Request, urlopen
 from flask import Flask, jsonify, render_template, request
 from dotenv import load_dotenv
 from google import genai
+from google.genai import types
 
 load_dotenv()
 
@@ -473,89 +474,136 @@ def step_label(step):
     return ""
 
 
+def generate_tool_declarations():
+    declarations = []
+    for item in build_tool_definitions():
+        declaration = dict(item)
+        declaration.pop("type", None)
+        declarations.append(declaration)
+    return declarations
+
+
+def agent_config():
+    return types.GenerateContentConfig(
+        tools=[
+            types.Tool(
+                google_search=types.GoogleSearch(),
+                function_declarations=generate_tool_declarations(),
+            ),
+            types.Tool(code_execution=types.CodeExecution()),
+        ],
+        tool_config=types.ToolConfig(
+            include_server_side_tool_invocations=True,
+            function_calling_config=types.FunctionCallingConfig(
+                mode="VALIDATED"
+            ),
+        ),
+    )
+
+
+def response_content(response):
+    try:
+        candidate = response.candidates[0]
+        return candidate.content
+    except (AttributeError, IndexError, TypeError):
+        return None
+
+
+def extract_function_calls(response):
+    calls = []
+    content = response_content(response)
+    if content is None:
+        return calls
+
+    for part in getattr(content, "parts", []) or []:
+        call = getattr(part, "function_call", None)
+        if call is not None:
+            calls.append(call)
+    return calls
+
+
 def run_agent(message, history, previous_interaction_id, session_id):
     if client is None:
         return None, None, [], "GEMINI_API_KEY is not configured yet."
 
     memory = memory_snapshot(session_id)
-    tools = [
-        {"type": "google_search"},
-        {"type": "code_execution"},
-        *build_tool_definitions(),
+    prior = history_block(history)
+
+    prompt = (
+        f"{SYSTEM_PROMPT}\n\n"
+        f"CURRENT MEMORY SNAPSHOT\n{memory}\n\n"
+        f"PREVIOUS CHAT HISTORY\n{prior or 'None'}\n\n"
+        f"CURRENT USER MESSAGE\n{message}"
+    )
+
+    contents = [
+        types.Content(
+            role="user",
+            parts=[types.Part(text=prompt)],
+        )
     ]
 
-    if previous_interaction_id:
-        first_input = (
-            f"[Current memory snapshot]\n{memory}\n\n"
-            f"[User message]\n{message}"
-        )
-        interaction = client.interactions.create(
-            model=MODEL,
-            previous_interaction_id=previous_interaction_id,
-            input=first_input,
-            tools=tools,
-            generation_config={"thinking_level": THINKING_LEVEL, "tool_choice": "validated"},
-        )
-    else:
-        prior = history_block(history)
-        first_input = (
-            f"{SYSTEM_PROMPT}\n\n"
-            f"CURRENT MEMORY SNAPSHOT\n{memory}\n\n"
-            f"PREVIOUS CHAT HISTORY\n{prior or 'None'}\n\n"
-            f"USER MESSAGE\n{message}"
-        )
-        interaction = client.interactions.create(
-            model=MODEL,
-            input=first_input,
-            tools=tools,
-            generation_config={"thinking_level": THINKING_LEVEL, "tool_choice": "validated"},
-        )
-
     activity = []
+
     for _ in range(MAX_TOOL_ROUNDS):
-        steps = list(getattr(interaction, "steps", []) or [])
-        function_results = []
-
-        for step in steps:
-            label = step_label(step)
-            if label and label not in activity:
-                activity.append(label)
-
-            if str(getattr(step, "type", "") or "").lower() != "function_call":
-                continue
-
-            name = str(getattr(step, "name", "") or "")
-            raw_args = getattr(step, "arguments", {}) or {}
-            if isinstance(raw_args, str):
-                try:
-                    args = json.loads(raw_args)
-                except json.JSONDecodeError:
-                    args = {}
-            else:
-                args = raw_args
-
-            result = execute_tool(name, args, session_id)
-            function_results.append(
-                {
-                    "type": "function_result",
-                    "name": name,
-                    "call_id": str(getattr(step, "id", "") or ""),
-                    "result": [{"type": "text", "text": json.dumps(result)}],
-                }
-            )
-
-        if not function_results:
-            reply = str(getattr(interaction, "output_text", "") or "").strip()
-            if not reply:
-                reply = "I completed the agent run, but it did not return text."
-            return reply, str(getattr(interaction, "id", "") or ""), activity, None
-
-        interaction = client.interactions.create(
+        response = client.models.generate_content(
             model=MODEL,
-            previous_interaction_id=interaction.id,
-            input=function_results,
-            tools=tools,
-            generation_config={"thinking_level": THINKING_LEVEL},
+            contents=contents,
+            config=agent_config(),
+        )
+
+        content = response_content(response)
+        if content is None:
+            return None, None, activity, "Gemini returned an empty response."
+
+        response_text = str(getattr(response, "text", "") or "").strip()
+        for label in ("Web research", "Code execution"):
+            if label not in activity:
+                for part in getattr(content, "parts", []) or []:
+                    if label == "Web research" and (
+                        getattr(part, "google_search", None)
+                        or getattr(part, "tool_call", None)
+                    ):
+                        activity.append(label)
+                    if label == "Code execution" and (
+                        getattr(part, "executable_code", None)
+                        or getattr(part, "code_execution_result", None)
+                    ):
+                        activity.append(label)
+
+        calls = extract_function_calls(response)
+
+        if not calls:
+            if not response_text:
+                response_text = "I completed the agent run, but Gemini returned no text."
+            return response_text, None, activity, None
+
+        contents.append(content)
+
+        result_parts = []
+        for call in calls:
+            name = str(getattr(call, "name", "") or "")
+            args = getattr(call, "args", {}) or {}
+            result = execute_tool(name, dict(args), session_id)
+            activity.append(name.replace("_", " ").title())
+
+            call_result = {
+                "type": "function_response",
+                "name": name,
+                "response": result,
+            }
+
+            call_id = str(getattr(call, "id", "") or "")
+            if call_id:
+                call_result["id"] = call_id
+
+            result_parts.append(types.Part(function_response=types.FunctionResponse(**call_result)))
+
+        contents.append(
+            types.Content(
+                role="user",
+                parts=result_parts,
+            )
         )
 
     return None, None, activity, "KYRO hit its maximum tool rounds for this request."
@@ -570,12 +618,16 @@ def fallback_chat(message, history, session_id):
         f"HISTORY\n{prior or 'None'}\n\n"
         f"USER\n{message}"
     )
-    interaction = client.interactions.create(
+    response = client.models.generate_content(
         model=MODEL,
-        input=prompt,
-        generation_config={"thinking_level": THINKING_LEVEL},
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            thinking_config=types.ThinkingConfig(
+                thinking_level=THINKING_LEVEL
+            )
+        ),
     )
-    reply = str(getattr(interaction, "output_text", "") or "").strip()
+    reply = str(getattr(response, "text", "") or "").strip()
     return reply or "I couldn't generate a response."
 
 
@@ -629,34 +681,22 @@ def chat():
     if not message:
         return jsonify({"error": "Message cannot be empty."}), 400
 
-    previous_interaction_id = str(data.get("interaction_id", "") or "").strip() or None
-
     try:
         try:
-            try:
-                reply, interaction_id, activity, error = run_agent(
-                    message=message,
-                    history=history,
-                    previous_interaction_id=previous_interaction_id,
-                    session_id=session_id,
-                )
-            except Exception:
-                # Stored interaction IDs can belong to an older model/deployment.
-                # Retry the request as a fresh interaction instead of breaking chat.
-                reply, interaction_id, activity, error = run_agent(
-                    message=message,
-                    history=history,
-                    previous_interaction_id=None,
-                    session_id=session_id,
-                )
+            reply, interaction_id, activity, error = run_agent(
+                message=message,
+                history=history,
+                previous_interaction_id=None,
+                session_id=session_id,
+            )
         except Exception as agent_error:
-            fallback_reason = str(agent_error)
+            # Keep ordinary chat alive if an optional agent tool fails.
             reply = fallback_chat(message, history, session_id)
             interaction_id = None
             activity = ["Fallback chat mode"]
             error = None
             if not reply:
-                error = fallback_reason
+                error = str(agent_error)
 
         if error:
             return jsonify({"error": error, "activity": activity}), 500
