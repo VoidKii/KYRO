@@ -9,6 +9,7 @@ from urllib.request import Request, urlopen
 from flask import Flask, jsonify, render_template, request
 from dotenv import load_dotenv
 from google import genai
+from google.genai import errors, types
 
 load_dotenv()
 
@@ -35,7 +36,17 @@ ALLOWED_REPOS = {
 }
 DB_PATH = os.getenv("KYRO_DB_PATH", "kyro.db")
 
-client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+client = (
+    genai.Client(
+        api_key=GEMINI_API_KEY,
+        http_options=types.HttpOptions(
+            timeout=25000,
+            retry_options=types.HttpRetryOptions(attempts=1),
+        ),
+    )
+    if GEMINI_API_KEY
+    else None
+)
 
 SYSTEM_PROMPT = """You are KYRO, an autonomous personal AI agent.
 
@@ -473,6 +484,31 @@ def step_label(step):
     return ""
 
 
+def is_rate_limit_error(exc):
+    code = getattr(exc, "code", None)
+    status = getattr(exc, "status_code", None)
+    if code in (429, "429") or status in (429, "429"):
+        return True
+
+    name = exc.__class__.__name__.lower()
+    message = str(exc).lower()
+    return "ratelimit" in name or "too many requests" in message or "resource exhausted" in message
+
+
+def friendly_api_error(exc):
+    if is_rate_limit_error(exc):
+        return (
+            "KYRO is temporarily rate-limited by Gemini (HTTP 429). "
+            "The API key has hit its current request/token quota. "
+            "Please wait for the quota window to reset or use a Gemini API key/project with available quota."
+        )
+
+    message = str(exc).strip()
+    if not message:
+        message = "Gemini returned an unknown API error."
+    return f"Gemini API error: {message[:800]}"
+
+
 def build_agent_tools():
     return [
         {"type": "google_search"},
@@ -675,31 +711,41 @@ def chat():
                 session_id=session_id,
             )
         except Exception as agent_error:
+            if is_rate_limit_error(agent_error):
+                app.logger.warning("KYRO Gemini rate limited: %s", agent_error)
+                return jsonify({
+                    "error": friendly_api_error(agent_error),
+                    "activity": ["Gemini rate limit"]
+                }), 429
+
             app.logger.exception("KYRO agent failed")
-            # Keep ordinary chat alive if an optional agent tool fails.
             try:
                 reply = fallback_chat(message, history, session_id)
-            except Exception:
+            except Exception as fallback_error:
                 app.logger.exception("KYRO fallback chat failed")
-                reply = None
+                return jsonify({
+                    "error": friendly_api_error(fallback_error),
+                    "activity": ["Fallback failed"]
+                }), 502
+
             interaction_id = None
             activity = ["Fallback chat mode"]
             error = None
-            if not reply:
-                error = "KYRO could not reach Gemini. Check the Render logs for the exact API error."
 
         if error:
             return jsonify({"error": error, "activity": activity}), 500
 
-        return jsonify(
-            {
-                "reply": reply,
-                "interaction_id": interaction_id,
-                "activity": activity,
-            }
-        )
+        return jsonify({
+            "reply": reply,
+            "interaction_id": interaction_id,
+            "activity": activity,
+        })
     except Exception as exc:
-        return jsonify({"error": str(exc)}), 500
+        app.logger.exception("KYRO request failed")
+        return jsonify({
+            "error": friendly_api_error(exc),
+            "activity": ["API error"]
+        }), 502
 
 
 if __name__ == "__main__":
