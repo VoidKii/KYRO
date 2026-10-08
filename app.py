@@ -494,7 +494,7 @@ def run_agent(message, history, previous_interaction_id, session_id):
             previous_interaction_id=previous_interaction_id,
             input=first_input,
             tools=tools,
-            generation_config={"thinking_level": THINKING_LEVEL},
+            generation_config={"thinking_level": THINKING_LEVEL, "tool_choice": "validated"},
         )
     else:
         prior = history_block(history)
@@ -508,7 +508,7 @@ def run_agent(message, history, previous_interaction_id, session_id):
             model=MODEL,
             input=first_input,
             tools=tools,
-            generation_config={"thinking_level": THINKING_LEVEL},
+            generation_config={"thinking_level": THINKING_LEVEL, "tool_choice": "validated"},
         )
 
     activity = []
