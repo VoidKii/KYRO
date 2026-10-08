@@ -4,103 +4,190 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#070708">
-  <title>KYRO — Personal AI</title>
+  <title>KYRO — AI Agent</title>
   <style>
     :root{
-      --bg:#070708;--panel:#101012;--panel2:#0c0c0f;--border:rgba(255,255,255,.08);
-      --text:#f7f7f8;--muted:#8d8d96;--user:#f4f4f5;--userText:#080809;--kyro:#151519;
+      --bg:#060608;--panel:#0e0e12;--panel2:#0a0a0d;--border:rgba(255,255,255,.08);
+      --text:#f5f5f7;--muted:#8a8a94;--soft:#b7b7c0;--user:#f4f4f5;--userText:#070708;
+      --accent:#ffffff;--good:#77e39a;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;background:radial-gradient(circle at 55% -10%,rgba(255,255,255,.08),transparent 34%),var(--bg);
-      color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
+    body{
+      margin:0;color:var(--text);
+      background:
+        radial-gradient(circle at 50% -15%,rgba(255,255,255,.09),transparent 34%),
+        radial-gradient(circle at 85% 85%,rgba(100,100,255,.045),transparent 28%),
+        var(--bg);
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      overflow:hidden;
+    }
     button,input{font:inherit}
     button{cursor:pointer}
-    .shell{width:min(1280px,97vw);height:min(900px,94vh);margin:3vh auto;display:flex;overflow:hidden;
-      border:1px solid var(--border);border-radius:26px;background:rgba(14,14,17,.9);
-      box-shadow:0 30px 100px rgba(0,0,0,.55);backdrop-filter:blur(22px)}
-    .sidebar{width:255px;flex:0 0 255px;padding:14px;display:flex;flex-direction:column;
-      background:rgba(9,9,11,.85);border-right:1px solid var(--border)}
-    .new-chat{width:100%;height:44px;border:1px solid var(--border);border-radius:13px;background:#fff;color:#000;font-weight:850;
-      transition:.18s ease;display:flex;align-items:center;justify-content:center;gap:8px}
-    .new-chat:hover{transform:translateY(-1px);box-shadow:0 9px 25px rgba(0,0,0,.25)}
-    .history-label{margin:22px 8px 9px;color:#66666e;text-transform:uppercase;font-size:10px;font-weight:800;letter-spacing:.9px}
+    .shell{
+      width:min(1360px,97vw);height:min(920px,95vh);margin:2.5vh auto;
+      display:flex;overflow:hidden;border:1px solid var(--border);border-radius:28px;
+      background:rgba(12,12,15,.93);box-shadow:0 35px 120px rgba(0,0,0,.6);backdrop-filter:blur(24px);
+    }
+    .sidebar{
+      width:270px;flex:0 0 270px;padding:14px;display:flex;flex-direction:column;
+      background:rgba(7,7,9,.9);border-right:1px solid var(--border);
+    }
+    .new-chat{
+      width:100%;height:44px;border:1px solid rgba(255,255,255,.12);border-radius:13px;
+      background:#fff;color:#000;font-weight:850;transition:.18s ease;
+    }
+    .new-chat:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(0,0,0,.25)}
+    .section-label{
+      margin:20px 8px 9px;color:#64646d;text-transform:uppercase;font-size:10px;
+      font-weight:850;letter-spacing:1px;
+    }
     .history{flex:1;overflow:auto}
-    .history::-webkit-scrollbar{width:6px}.history::-webkit-scrollbar-thumb{background:rgba(255,255,255,.09);border-radius:10px}
-    .chat-item{width:100%;padding:11px 12px;margin-bottom:5px;border:1px solid transparent;border-radius:12px;
-      background:transparent;color:#d7d7db;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:.16s ease}
-    .chat-item:hover{background:rgba(255,255,255,.05)}.chat-item.active{background:rgba(255,255,255,.075);border-color:var(--border)}
-    .side-foot{padding-top:10px;border-top:1px solid var(--border);color:#66666e;font-size:11px;text-align:center}
+    .history::-webkit-scrollbar{width:6px}.history::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:10px}
+    .chat-item{
+      width:100%;padding:11px 12px;margin-bottom:5px;border:1px solid transparent;border-radius:12px;
+      background:transparent;color:#d7d7db;text-align:left;overflow:hidden;white-space:nowrap;
+      text-overflow:ellipsis;transition:.16s ease;
+    }
+    .chat-item:hover{background:rgba(255,255,255,.05)}
+    .chat-item.active{background:rgba(255,255,255,.075);border-color:var(--border)}
+    .cap-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+    .cap{
+      padding:9px 8px;border:1px solid var(--border);border-radius:11px;
+      background:rgba(255,255,255,.02);color:#a9a9b2;font-size:10px;text-align:center;
+    }
+    .side-foot{
+      margin-top:12px;padding-top:11px;border-top:1px solid var(--border);
+      color:#61616a;font-size:10px;text-align:center;
+    }
     .main{min-width:0;flex:1;display:flex;flex-direction:column}
-    header{height:76px;flex:0 0 76px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;
-      border-bottom:1px solid var(--border);background:rgba(12,12,14,.62)}
+    header{
+      height:78px;flex:0 0 78px;display:flex;align-items:center;justify-content:space-between;
+      gap:14px;padding:14px 20px;border-bottom:1px solid var(--border);background:rgba(12,12,14,.62);
+    }
     .brand{display:flex;align-items:center;gap:12px;min-width:0}
-    .logo{width:43px;height:43px;flex:0 0 43px;display:grid;place-items:center;border-radius:14px;background:#fff;color:#000;
-      font-weight:950;letter-spacing:-1px;box-shadow:0 0 28px rgba(255,255,255,.11)}
-    .brand h1{margin:0;font-size:18px;line-height:1.05;letter-spacing:-.4px}
-    .status{display:flex;align-items:center;gap:7px;margin-top:5px;color:var(--muted);font-size:12px}
-    .dot{width:7px;height:7px;border-radius:50%;background:#79d98c;box-shadow:0 0 10px rgba(121,217,140,.7)}
-    .top-actions{display:flex;gap:8px}.icon-btn{width:40px;height:40px;border:1px solid var(--border);border-radius:12px;
-      background:rgba(255,255,255,.025);color:#d7d7db;font-size:16px;transition:.18s ease}
+    .logo{
+      width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;border-radius:14px;
+      background:#fff;color:#000;font-weight:950;letter-spacing:-1px;box-shadow:0 0 30px rgba(255,255,255,.12)
+    }
+    .brand h1{margin:0;font-size:18px;line-height:1.05;letter-spacing:-.5px}
+    .status{display:flex;align-items:center;gap:7px;margin-top:5px;color:var(--muted);font-size:11px}
+    .dot{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 10px rgba(119,227,154,.6)}
+    .top-actions{display:flex;gap:8px;align-items:center}
+    .mode-pill{
+      display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid var(--border);
+      border-radius:11px;color:#bdbdc6;background:rgba(255,255,255,.025);font-size:10px;font-weight:800;
+    }
+    .mode-dot{width:6px;height:6px;border-radius:50%;background:#8ea6ff;box-shadow:0 0 10px rgba(142,166,255,.55)}
+    .icon-btn{
+      width:40px;height:40px;border:1px solid var(--border);border-radius:12px;
+      background:rgba(255,255,255,.025);color:#d7d7db;font-size:16px;transition:.18s ease
+    }
     .icon-btn:hover{background:rgba(255,255,255,.07);transform:translateY(-1px)}
     .mobile-new{display:none}
-    #chat{flex:1;min-height:0;overflow:auto;padding:28px clamp(16px,5vw,70px);scroll-behavior:smooth}
+    #chat{flex:1;min-height:0;overflow:auto;padding:28px clamp(16px,5vw,76px);scroll-behavior:smooth}
     #chat::-webkit-scrollbar{width:9px}#chat::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:10px}
-    .welcome{max-width:700px;margin:10vh auto 34px;text-align:center}
-    .welcome-badge{width:62px;height:62px;margin:0 auto 18px;display:grid;place-items:center;border:1px solid var(--border);
-      border-radius:20px;background:linear-gradient(145deg,#1c1c21,#0d0d10);font-size:25px;font-weight:950;
-      box-shadow:0 15px 50px rgba(0,0,0,.28)}
-    .welcome h2{margin:0;font-size:clamp(28px,5vw,42px);letter-spacing:-1.5px}
-    .welcome p{margin:10px auto 0;max-width:560px;color:var(--muted);line-height:1.6;font-size:14px}
-    .msg-wrap{display:flex;max-width:850px;margin:0 auto 16px;animation:messageIn .24s ease both}
+    .welcome{max-width:720px;margin:11vh auto 34px;text-align:center}
+    .welcome-badge{
+      width:66px;height:66px;margin:0 auto 18px;display:grid;place-items:center;
+      border:1px solid var(--border);border-radius:21px;background:linear-gradient(145deg,#1d1d23,#0d0d10);
+      font-size:26px;font-weight:950;box-shadow:0 18px 55px rgba(0,0,0,.3)
+    }
+    .welcome h2{margin:0;font-size:clamp(30px,5vw,44px);letter-spacing:-1.8px}
+    .welcome p{margin:11px auto 0;max-width:590px;color:var(--muted);line-height:1.65;font-size:14px}
+    .chips{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:18px}
+    .chip{
+      padding:7px 9px;border:1px solid var(--border);border-radius:999px;
+      color:#9d9da6;background:rgba(255,255,255,.02);font-size:10px
+    }
+    .msg-wrap{display:flex;max-width:900px;margin:0 auto 17px;animation:messageIn .24s ease both}
     .msg-wrap.user{justify-content:flex-end}.msg-wrap.kyro{justify-content:flex-start}
-    .msg{max-width:min(78%,720px);padding:13px 16px;border-radius:19px;line-height:1.62;white-space:pre-wrap;
-      word-break:break-word;font-size:14px}
-    .msg.user{color:var(--userText);background:var(--user);border-bottom-right-radius:6px;box-shadow:0 8px 22px rgba(0,0,0,.18)}
-    .msg.kyro{color:#e7e7ea;background:var(--kyro);border:1px solid var(--border);border-bottom-left-radius:6px}
-    .msg-tools{display:flex;gap:5px;margin:5px 3px 0}
-    .tool-btn{border:0;background:transparent;color:#66666e;font-size:11px;padding:3px 5px;border-radius:6px}
+    .msg{
+      max-width:min(80%,760px);padding:13px 16px;border-radius:19px;line-height:1.65;
+      white-space:pre-wrap;word-break:break-word;font-size:14px
+    }
+    .msg.user{
+      color:var(--userText);background:var(--user);border-bottom-right-radius:6px;
+      box-shadow:0 9px 24px rgba(0,0,0,.18)
+    }
+    .msg.kyro{
+      color:#e8e8ec;background:#141418;border:1px solid var(--border);
+      border-bottom-left-radius:6px
+    }
+    .agent-tag{
+      display:block;margin-bottom:7px;color:#7e7e89;font-size:9px;text-transform:uppercase;
+      letter-spacing:.9px;font-weight:850
+    }
+    .msg-tools{display:flex;gap:5px;margin:6px 3px 0}
+    .tool-btn{
+      border:0;background:transparent;color:#686871;font-size:10px;padding:3px 6px;border-radius:6px
+    }
     .tool-btn:hover{color:#d5d5da;background:rgba(255,255,255,.05)}
-    .tool-btn:disabled{opacity:.45;cursor:wait}
-    .typing{display:inline-flex;align-items:center;gap:6px;padding:14px 16px}
-    .typing span{width:6px;height:6px;border-radius:50%;background:#aaaab1;animation:bounce 1.15s infinite ease-in-out}
-    .typing span:nth-child(2){animation-delay:.12s}.typing span:nth-child(3){animation-delay:.24s}
+    .activity{
+      display:flex;gap:6px;flex-wrap:wrap;margin-top:8px
+    }
+    .activity-item{
+      padding:5px 7px;border:1px solid var(--border);border-radius:8px;
+      color:#81818b;background:rgba(255,255,255,.025);font-size:9px
+    }
+    .typing{display:inline-flex;align-items:center;gap:6px;padding:12px 15px}
+    .typing-text{margin-right:4px;color:#8a8a94;font-size:11px}
+    .typing span{width:5px;height:5px;border-radius:50%;background:#aaaab1;animation:bounce 1.15s infinite ease-in-out}
+    .typing span:nth-last-child(2){animation-delay:.12s}.typing span:last-child{animation-delay:.24s}
     form{padding:14px 16px 17px;border-top:1px solid var(--border);background:rgba(10,10,12,.72)}
-    .composer{width:min(850px,100%);margin:0 auto;display:flex;align-items:center;gap:9px;padding:8px;
-      border:1px solid var(--border);border-radius:18px;background:#0e0e11;box-shadow:0 10px 35px rgba(0,0,0,.2)}
+    .composer{
+      width:min(900px,100%);margin:0 auto;display:flex;align-items:center;gap:9px;padding:8px;
+      border:1px solid var(--border);border-radius:18px;background:#0d0d10;box-shadow:0 10px 35px rgba(0,0,0,.22)
+    }
     input{min-width:0;flex:1;border:0;outline:none;padding:11px 12px;color:#fff;background:transparent}
     input::placeholder{color:#66666e}
-    .send{height:40px;padding:0 17px;border:0;border-radius:13px;background:#fff;color:#000;font-weight:850;transition:.18s ease}
-    .send:hover:not(:disabled){transform:translateY(-1px)}.send:disabled{opacity:.45;cursor:wait}
-    .hint{width:min(850px,100%);margin:8px auto 0;text-align:center;color:#5f5f67;font-size:11px}
+    .send{
+      height:40px;padding:0 17px;border:0;border-radius:13px;background:#fff;color:#000;
+      font-weight:850;transition:.18s ease
+    }
+    .send:hover:not(:disabled){transform:translateY(-1px)}
+    .send:disabled{opacity:.45;cursor:wait}
+    .hint{width:min(900px,100%);margin:8px auto 0;text-align:center;color:#5f5f67;font-size:10px}
     @keyframes messageIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
     @keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.45}30%{transform:translateY(-4px);opacity:1}}
     @media(max-width:850px){
-      .sidebar{width:220px;flex-basis:220px}
-      .msg{max-width:86%}
+      .sidebar{width:230px;flex-basis:230px}
+      .msg{max-width:87%}
+      .mode-pill{display:none}
     }
     @media(max-width:700px){
-      body{overflow:hidden}.shell{width:100vw;height:100vh;min-height:100svh;margin:0;border:0;border-radius:0}
-      .sidebar{position:fixed;z-index:20;inset:0 auto 0 0;width:280px;transform:translateX(-105%);
-        box-shadow:25px 0 70px rgba(0,0,0,.5);transition:transform .22s ease}
+      body{overflow:hidden}
+      .shell{width:100vw;height:100vh;min-height:100svh;margin:0;border:0;border-radius:0}
+      .sidebar{
+        position:fixed;z-index:20;inset:0 auto 0 0;width:285px;
+        transform:translateX(-105%);box-shadow:25px 0 70px rgba(0,0,0,.5);transition:transform .22s ease
+      }
       .sidebar.open{transform:translateX(0)}
       .main{width:100%}.mobile-new{display:block}
       header{height:68px;flex-basis:68px;padding:12px 14px}.logo{width:40px;height:40px;flex-basis:40px}
       .top-actions{gap:6px}.icon-btn{width:38px;height:38px}
-      #chat{padding:20px 12px 22px}.welcome{margin:6vh auto 28px;padding:0 10px}.welcome h2{font-size:30px}
-      .welcome p{font-size:13px}.msg{max-width:88%;font-size:13px}
-      form{padding:10px 10px calc(10px + env(safe-area-inset-bottom))}.composer{border-radius:16px}
-      input{padding:10px 8px}.send{padding:0 14px}.hint{display:none}
+      #chat{padding:20px 12px 22px}.welcome{margin:6vh auto 28px;padding:0 10px}
+      .welcome h2{font-size:30px}.welcome p{font-size:13px}.msg{max-width:89%;font-size:13px}
+      form{padding:10px 10px calc(10px + env(safe-area-inset-bottom))}
+      .composer{border-radius:16px}.hint{display:none}
     }
   </style>
 </head>
 <body>
   <main class="shell">
     <aside class="sidebar" id="sidebar">
-      <button class="new-chat" id="newChat">＋ New chat</button>
-      <div class="history-label">Your chats</div>
+      <button class="new-chat" id="newChat" type="button">＋ New chat</button>
+      <div class="section-label">Your chats</div>
       <div class="history" id="historyList"></div>
-      <div class="side-foot">KYRO · Personal AI</div>
+
+      <div class="section-label">Agent powers</div>
+      <div class="cap-grid" id="capabilities">
+        <div class="cap">Web search</div>
+        <div class="cap">Code execution</div>
+        <div class="cap">Memory</div>
+        <div class="cap">GitHub</div>
+      </div>
+      <div class="side-foot">KYRO · Autonomous personal AI</div>
     </aside>
 
     <section class="main">
@@ -110,10 +197,11 @@
           <div class="logo">K</div>
           <div>
             <h1>KYRO</h1>
-            <div class="status"><span class="dot"></span> Online · Personal AI</div>
+            <div class="status"><span class="dot"></span><span id="statusText">Agent online</span></div>
           </div>
         </div>
         <div class="top-actions">
+          <div class="mode-pill"><span class="mode-dot"></span> AGENT MODE</div>
           <button class="icon-btn" id="clear" type="button" title="Clear current chat" aria-label="Clear current chat">⌫</button>
         </div>
       </header>
@@ -122,10 +210,10 @@
 
       <form id="form">
         <div class="composer">
-          <input id="message" autocomplete="off" placeholder="Message KYRO..." maxlength="4000">
+          <input id="message" autocomplete="off" placeholder="Tell KYRO what to do..." maxlength="6000">
           <button class="send" id="send" type="submit">Send</button>
         </div>
-        <div class="hint">Enter to send · Shift+Enter for a new line · KYRO can make mistakes.</div>
+        <div class="hint">Enter to send · Shift+Enter for a new line · KYRO may use tools when they help</div>
       </form>
     </section>
   </main>
@@ -140,22 +228,33 @@
     const historyList = document.getElementById("historyList");
     const sidebar = document.getElementById("sidebar");
     const menuBtn = document.getElementById("menuBtn");
+    const statusText = document.getElementById("statusText");
+    const capabilities = document.getElementById("capabilities");
 
-    const CHATS_KEY = "kyro_chats_v2";
-    const ACTIVE_KEY = "kyro_active_chat_v2";
+    const CHATS_KEY = "kyro_chats_v3";
+    const ACTIVE_KEY = "kyro_active_chat_v3";
+    const SESSION_KEY = "kyro_session_v1";
 
     let chats = loadChats();
     let activeId = localStorage.getItem(ACTIVE_KEY);
+    let sessionId = localStorage.getItem(SESSION_KEY);
+
+    if(!sessionId){
+      sessionId = crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+      localStorage.setItem(SESSION_KEY, sessionId);
+    }
 
     function uid(){
       return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
     }
 
     function loadChats(){
-      try {
+      try{
         const saved = JSON.parse(localStorage.getItem(CHATS_KEY) || "[]");
         return Array.isArray(saved) ? saved : [];
-      } catch { return []; }
+      }catch{
+        return [];
+      }
     }
 
     function persist(){
@@ -164,7 +263,13 @@
     }
 
     function createChat(){
-      const chatObject = { id: uid(), title: "New chat", messages: [], updatedAt: Date.now() };
+      const chatObject = {
+        id: uid(),
+        title: "New chat",
+        messages: [],
+        updatedAt: Date.now(),
+        interactionId: null
+      };
       chats.unshift(chatObject);
       activeId = chatObject.id;
       persist();
@@ -184,7 +289,7 @@
 
     function titleFrom(text){
       const clean = text.replace(/\s+/g, " ").trim();
-      return clean.length > 32 ? clean.slice(0,32).trim() + "…" : (clean || "New chat");
+      return clean.length > 36 ? clean.slice(0,36).trim() + "…" : (clean || "New chat");
     }
 
     function renderHistory(){
@@ -217,15 +322,36 @@
       });
     }
 
-    function createMessage(text, type, animate, messageIndex = -1){
+    function createMessage(text, type, animate, messageIndex = -1, activity = []){
       const wrap = document.createElement("div");
       wrap.className = "msg-wrap " + type;
       if(!animate) wrap.style.animation = "none";
 
       const div = document.createElement("div");
       div.className = "msg " + type;
-      div.textContent = text;
-      wrap.appendChild(div);
+
+      if(type === "kyro"){
+        const tag = document.createElement("span");
+        tag.className = "agent-tag";
+        tag.textContent = "KYRO · AGENT";
+        div.appendChild(tag);
+      }
+
+      const body = document.createElement("span");
+      body.textContent = text;
+      div.appendChild(body);
+
+      if(type === "kyro" && activity?.length){
+        const activityBox = document.createElement("div");
+        activityBox.className = "activity";
+        [...new Set(activity)].slice(0,8).forEach(label => {
+          const item = document.createElement("span");
+          item.className = "activity-item";
+          item.textContent = label;
+          activityBox.appendChild(item);
+        });
+        div.appendChild(activityBox);
+      }
 
       if(type === "kyro" && text){
         const tools = document.createElement("div");
@@ -236,13 +362,12 @@
         copy.type = "button";
         copy.textContent = "Copy";
         copy.onclick = async () => {
-          try {
+          try{
             await navigator.clipboard.writeText(text);
             copy.textContent = "Copied";
             setTimeout(() => copy.textContent = "Copy", 1200);
-          } catch {}
+          }catch{}
         };
-
         tools.appendChild(copy);
 
         const c = currentChat();
@@ -258,6 +383,7 @@
         div.appendChild(tools);
       }
 
+      wrap.appendChild(div);
       chat.appendChild(wrap);
       chat.scrollTop = chat.scrollHeight;
     }
@@ -274,9 +400,18 @@
       title.textContent = "What are we building today?";
 
       const p = document.createElement("p");
-      p.textContent = "Talk to KYRO, your personal AI assistant for ideas, coding, projects, learning, and whatever comes next.";
+      p.textContent = "KYRO can reason through tasks, research the web, run code, remember useful context, and work with your GitHub projects.";
 
-      welcome.append(badge, title, p);
+      const chips = document.createElement("div");
+      chips.className = "chips";
+      ["Research","Code","Projects","Memory","GitHub"].forEach(label => {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.textContent = label;
+        chips.appendChild(chip);
+      });
+
+      welcome.append(badge, title, p, chips);
       chat.appendChild(welcome);
     }
 
@@ -289,7 +424,7 @@
         return;
       }
 
-      c.messages.forEach((m, i) => createMessage(m.text, m.type, false, i));
+      c.messages.forEach((m,i) => createMessage(m.text, m.type, false, i, m.activity || []));
       chat.scrollTop = chat.scrollHeight;
     }
 
@@ -300,7 +435,16 @@
 
       const div = document.createElement("div");
       div.className = "msg kyro typing";
-      div.innerHTML = "<span></span><span></span><span></span>";
+
+      const textNode = document.createElement("span");
+      textNode.className = "typing-text";
+      textNode.textContent = "KYRO is thinking";
+
+      div.append(textNode);
+      for(let i=0;i<3;i++){
+        const dot = document.createElement("span");
+        div.appendChild(dot);
+      }
 
       wrap.appendChild(div);
       chat.appendChild(wrap);
@@ -311,10 +455,11 @@
       document.getElementById("typing")?.remove();
     }
 
-    function addStoredMessage(text, type){
+    function addStoredMessage(text, type, activity = []){
       const c = currentChat();
       if(!c) return;
-      c.messages.push({text, type});
+
+      c.messages.push({text, type, activity});
       c.updatedAt = Date.now();
 
       if(type === "user" && c.title === "New chat"){
@@ -325,8 +470,8 @@
       renderHistory();
     }
 
-    function addVisibleMessage(text, type){
-      createMessage(text, type, true, currentChat()?.messages.length ?? -1);
+    function addVisibleMessage(text, type, activity = []){
+      createMessage(text, type, true, currentChat()?.messages.length ?? -1, activity);
     }
 
     function apiHistory(limit = 12){
@@ -338,6 +483,28 @@
       }));
     }
 
+    async function callKyro(message, opts = {}){
+      const c = currentChat();
+      const interactionId = opts.fresh ? null : (c?.interactionId || null);
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          message,
+          history: apiHistory(12),
+          interaction_id: interactionId,
+          session_id: sessionId
+        })
+      });
+
+      let data = {};
+      try{ data = await res.json(); }catch{}
+
+      if(!res.ok) throw new Error(data.error || "Something went wrong.");
+      return data;
+    }
+
     async function regenerateResponse(userIndex, button){
       const targetChat = currentChat();
       if(!targetChat || send.disabled) return;
@@ -345,54 +512,35 @@
       const original = targetChat.messages[userIndex];
       if(!original || original.type !== "user") return;
 
-      const targetId = targetChat.id;
-      const message = original.text;
-
       send.disabled = true;
       send.textContent = "…";
       if(button) button.disabled = true;
       addTyping();
 
       try{
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({
-            message,
-            history: JSON.stringify(apiHistory())
-          })
-        });
-
-        const data = await res.json();
+        const data = await callKyro(original.text, {fresh:true});
         removeTyping();
 
-        if(!res.ok) throw new Error(data.error || "Something went wrong.");
-
-        const target = chats.find(c => c.id === targetId);
+        const target = currentChat();
         if(!target) return;
 
         const existing = target.messages[userIndex + 1];
-        const updated = {text:data.reply, type:"kyro"};
+        const updated = {text:data.reply, type:"kyro", activity:data.activity || []};
 
-        if(existing && existing.type === "kyro"){
-          target.messages[userIndex + 1] = updated;
-        }else{
-          target.messages.splice(userIndex + 1, 0, updated);
-        }
+        if(existing && existing.type === "kyro") target.messages[userIndex + 1] = updated;
+        else target.messages.splice(userIndex + 1, 0, updated);
 
+        target.interactionId = data.interaction_id || null;
         target.updatedAt = Date.now();
         persist();
-
-        if(activeId === targetId){
-          renderHistory();
-          renderMessages();
-        }
+        renderHistory();
+        renderMessages();
       }catch(error){
         removeTyping();
-        const errorMessage = "Error: " + error.message;
-        const target = chats.find(c => c.id === targetId);
-        if(target && activeId === targetId){
-          addVisibleMessage(errorMessage, "kyro");
+        const target = currentChat();
+        if(target){
+          addVisibleMessage("Error: " + error.message, "kyro");
+          addStoredMessage("Error: " + error.message, "kyro");
         }
       }finally{
         send.disabled = false;
@@ -409,6 +557,7 @@
       c.messages = [];
       c.title = "New chat";
       c.updatedAt = Date.now();
+      c.interactionId = null;
       persist();
       renderHistory();
       renderMessages();
@@ -430,8 +579,8 @@
       if(!message || send.disabled) return;
 
       ensureChat();
-      const existingWelcome = chat.querySelector(".welcome");
-      if(existingWelcome) existingWelcome.remove();
+      const welcome = chat.querySelector(".welcome");
+      if(welcome) welcome.remove();
 
       addVisibleMessage(message, "user");
       addStoredMessage(message, "user");
@@ -441,43 +590,69 @@
       send.textContent = "…";
       addTyping();
 
-      try {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({
-            message,
-            history: JSON.stringify(apiHistory(12))
-          })
-        });
-
-        const data = await res.json();
+      try{
+        const data = await callKyro(message);
         removeTyping();
 
-        if(!res.ok) throw new Error(data.error || "Something went wrong.");
+        const c = currentChat();
+        if(c){
+          c.interactionId = data.interaction_id || null;
+          persist();
+        }
 
-        addVisibleMessage(data.reply, "kyro");
-        addStoredMessage(data.reply, "kyro");
-      } catch(error) {
+        addVisibleMessage(data.reply, "kyro", data.activity || []);
+        addStoredMessage(data.reply, "kyro", data.activity || []);
+      }catch(error){
         removeTyping();
         const errorMessage = "Error: " + error.message;
         addVisibleMessage(errorMessage, "kyro");
         addStoredMessage(errorMessage, "kyro");
-      } finally {
+      }finally{
         send.disabled = false;
         send.textContent = "Send";
         input.focus();
       }
     });
 
-    if(!activeId || !chats.some(c => c.id === activeId)){
-      if(chats.length) activeId = chats[0].id;
-      else createChat();
+    async function loadCapabilities(){
+      try{
+        const res = await fetch("/api/capabilities");
+        const data = await res.json();
+
+        statusText.textContent = data.agent ? "Agent online" : "AI offline";
+        capabilities.innerHTML = "";
+
+        (data.tools || []).forEach(tool => {
+          const item = document.createElement("div");
+          item.className = "cap";
+          item.textContent = tool;
+          capabilities.appendChild(item);
+        });
+
+        if(!data.github_write_enabled){
+          const item = document.createElement("div");
+          item.className = "cap";
+          item.textContent = "GitHub write locked";
+          capabilities.appendChild(item);
+        }
+      }catch{
+        statusText.textContent = "Agent status unavailable";
+      }
     }
 
-    persist();
-    renderHistory();
-    renderMessages();
+    if(!activeId || !chats.some(c => c.id === activeId)){
+      activeId = chats.length ? chats[0].id : null;
+    }
+
+    if(!activeId) createChat();
+    else{
+      persist();
+      renderHistory();
+      renderMessages();
+    }
+
+    loadCapabilities();
+    input.focus();
   </script>
 </body>
 </html>
