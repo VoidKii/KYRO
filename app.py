@@ -522,6 +522,19 @@ def extract_function_calls(response):
     return calls
 
 
+def extract_response_text(response):
+    content = response_content(response)
+    if content is None:
+        return ""
+
+    chunks = []
+    for part in getattr(content, "parts", []) or []:
+        text_value = getattr(part, "text", None)
+        if text_value:
+            chunks.append(str(text_value))
+    return "\n".join(chunks).strip()
+
+
 def run_agent(message, history, previous_interaction_id, session_id):
     if client is None:
         return None, None, [], "GEMINI_API_KEY is not configured yet."
@@ -556,7 +569,7 @@ def run_agent(message, history, previous_interaction_id, session_id):
         if content is None:
             return None, None, activity, "Gemini returned an empty response."
 
-        response_text = str(getattr(response, "text", "") or "").strip()
+        response_text = extract_response_text(response)
         for label in ("Web research", "Code execution"):
             if label not in activity:
                 for part in getattr(content, "parts", []) or []:
@@ -588,7 +601,6 @@ def run_agent(message, history, previous_interaction_id, session_id):
             activity.append(name.replace("_", " ").title())
 
             call_result = {
-                "type": "function_response",
                 "name": name,
                 "response": result,
             }
@@ -597,7 +609,9 @@ def run_agent(message, history, previous_interaction_id, session_id):
             if call_id:
                 call_result["id"] = call_id
 
-            result_parts.append(types.Part(function_response=types.FunctionResponse(**call_result)))
+            result_parts.append(
+                types.Part(function_response=types.FunctionResponse(**call_result))
+            )
 
         contents.append(
             types.Content(
