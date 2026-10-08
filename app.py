@@ -15,7 +15,16 @@ load_dotenv()
 app = Flask(__name__)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL = os.getenv("KYRO_MODEL", "gemini-3.8-flash")
+def resolve_model():
+    requested = os.getenv("KYRO_MODEL", "gemini-3.8-flash").strip()
+    # Older Gemini Flash variants have known built-in-tool + function issues.
+    blocked = {"gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.6-flash-latest"}
+    if requested.lower() in blocked:
+        return "gemini-3.8-flash"
+    return requested or "gemini-3.8-flash"
+
+
+MODEL = resolve_model()
 THINKING_LEVEL = os.getenv("KYRO_THINKING_LEVEL", "medium")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 GITHUB_WRITE = os.getenv("KYRO_GITHUB_WRITE", "false").lower() in {"1", "true", "yes", "on"}
@@ -561,11 +570,12 @@ def fallback_chat(message, history, session_id):
         f"HISTORY\n{prior or 'None'}\n\n"
         f"USER\n{message}"
     )
-    response = client.models.generate_content(
+    interaction = client.interactions.create(
         model=MODEL,
-        contents=prompt,
+        input=prompt,
+        generation_config={"thinking_level": THINKING_LEVEL},
     )
-    reply = str(getattr(response, "text", "") or "").strip()
+    reply = str(getattr(interaction, "output_text", "") or "").strip()
     return reply or "I couldn't generate a response."
 
 
@@ -623,12 +633,22 @@ def chat():
 
     try:
         try:
-            reply, interaction_id, activity, error = run_agent(
-                message=message,
-                history=history,
-                previous_interaction_id=previous_interaction_id,
-                session_id=session_id,
-            )
+            try:
+                reply, interaction_id, activity, error = run_agent(
+                    message=message,
+                    history=history,
+                    previous_interaction_id=previous_interaction_id,
+                    session_id=session_id,
+                )
+            except Exception:
+                # Stored interaction IDs can belong to an older model/deployment.
+                # Retry the request as a fresh interaction instead of breaking chat.
+                reply, interaction_id, activity, error = run_agent(
+                    message=message,
+                    history=history,
+                    previous_interaction_id=None,
+                    session_id=session_id,
+                )
         except Exception as agent_error:
             fallback_reason = str(agent_error)
             reply = fallback_chat(message, history, session_id)
